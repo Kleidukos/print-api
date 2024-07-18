@@ -68,5 +68,6 @@ executable dump-decls
     , dump-decls
     , ghc
     , ghc-paths
+    , optparse-applicative
 
   default-language: Haskell2010
