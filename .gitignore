@@ -1,0 +1,6 @@
+dist-newstyle
+tags
+tags.mtime
+.hpc
+*.tix
+*.local
