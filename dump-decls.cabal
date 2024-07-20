@@ -10,6 +10,8 @@ extra-source-files:
   compat/9.10.1/GHC/Compat.hs
   compat/9.6.5/GHC/Compat.hs
 
+tested-with:        GHC ==9.6.6 || ==9.10.1
+
 common extensions
   default-extensions:
     DataKinds
@@ -48,14 +50,22 @@ library
   if impl(ghc ==9.6.6)
     hs-source-dirs: compat/9.6.6
 
+  other-modules:   Paths_dump_decls
+  autogen-modules: Paths_dump_decls
+
   -- cabal-fmt: expand src/
   exposed-modules:
+    DumpDecls.CLI.Cmd.Dump
+    DumpDecls.CLI.Types
     DumpDecls.IgnoredDeclarations
     GHC.Compat
 
   build-depends:
     , base
     , ghc
+    , ghc-paths
+    , optparse-applicative
+    , text
 
 executable dump-decls
   import:           extensions
