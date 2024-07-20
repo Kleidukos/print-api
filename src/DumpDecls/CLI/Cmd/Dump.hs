@@ -22,7 +22,7 @@ import Prelude hiding ((<>))
 import DumpDecls.IgnoredDeclarations
 import GHC.Compat
 
-run 
+run
   :: FilePath
   -> String
   -> IO ()

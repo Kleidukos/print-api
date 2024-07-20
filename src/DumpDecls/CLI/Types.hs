@@ -1,10 +1,10 @@
 module DumpDecls.CLI.Types where
 
 import Data.Version (showVersion)
-import Options.Applicative
-import GHC.Paths (libdir)
-import Paths_dump_decls (version)
 import DumpDecls.CLI.Cmd.Dump (run)
+import GHC.Paths (libdir)
+import Options.Applicative
+import Paths_dump_decls (version)
 
 data Options = Options
   { packageName :: String

@@ -1,7 +1,7 @@
 module Main where
 
-import System.IO
 import Options.Applicative
+import System.IO
 
 import DumpDecls.CLI.Types
 
