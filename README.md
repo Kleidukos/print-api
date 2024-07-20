@@ -13,7 +13,22 @@ $ cabal build --write-ghc-environment-files=always
 
 Then run the `dump-decls` binary from within the same directory:
 
-
 ```
 $ dump-decls -p <my-package>
+```
+
+For instance in the [`text-display`](https://github.com/haskell-text/text-display) repository:
+
+```haskell
+❯ dump-decls -p text-display
+
+module Data.Text.Display where
+  type Display :: * -> Constraint
+  class Display a where
+    displayBuilder :: a -> Data.Text.Internal.Builder.Builder
+    displayList :: [a] -> Data.Text.Internal.Builder.Builder
+    displayPrec :: GHC.Types.Int -> a -> Data.Text.Internal.Builder.Builder
+    {-# MINIMAL displayBuilder | displayPrec #-}
+    {-# MINIMAL displayBuilder | displayPrec #-}
+  type role OpaqueInstance phantom representational
 ```
