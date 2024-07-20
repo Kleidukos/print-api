@@ -8,7 +8,7 @@ maintainer:         ben@smart-cactus.org
 copyright:          (c) 2023 Ben Gamari
 extra-source-files:
   compat/9.10.1/GHC/Compat.hs
-  compat/9.6.5/GHC/Compat.hs
+  compat/9.6.6/GHC/Compat.hs
 
 tested-with:        GHC ==9.6.6 || ==9.10.1
 
@@ -63,6 +63,7 @@ library
   build-depends:
     , base
     , ghc
+    , ghc-boot
     , ghc-paths
     , optparse-applicative
     , text

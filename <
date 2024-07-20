@@ -30,18 +30,18 @@ run
 run root packageName mPackageDatabase = runGhc (Just root) $ do
   let packageDatabaseOption =
         case mPackageDatabase of
-          Nothing -> mempty
+          Nothing -> [" "]
           Just dbPath -> "-package-db=" ++ dbPath
   let args :: [Located String] =
         map
-          noLoc
-          $ ["-hide-all-packages"]
-            ++ [packageDatabaseOption]
-            ++ [ "-package=" ++ packageName
-               , "-dppr-cols=1000"
-               , "-fprint-explicit-runtime-reps"
-               , "-fprint-explicit-foralls"
-               ]
+          noLoc $
+          [ "-hide-all-packages" ] 
+          ++ packageDatabaseOption
+          ++ [ "-package=" ++ packageName
+             , "-dppr-cols=1000"
+             , "-fprint-explicit-runtime-reps"
+             , "-fprint-explicit-foralls"
+             ]
   dflags <- do
     dflags <- getSessionDynFlags
     logger <- getLogger
