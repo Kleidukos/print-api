@@ -11,6 +11,9 @@ inputs:
   expected-interface:
     description: "The file of the expected interface of the package. Generate it yourself with `dump-decls`."
     required: true
+  ghc: 
+    description: "The version of GHC used to compile the project. See the project's README to know which versions are supported."
+    required: true
   version:
     description: "Version of the tool"
     required: true
