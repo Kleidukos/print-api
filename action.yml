@@ -5,9 +5,6 @@ inputs:
   package-name:
     description: "The package to test. Currently only one per project is supported"
     required: true
-  package-database:
-    description: "The path to the package database, usually located within the store. eg: ~/.cabal/store/ghc-9.6.6/package.db"
-    required: true
   expected-interface:
     description: "The file of the expected interface of the package. Generate it yourself with `dump-decls`."
     required: true
