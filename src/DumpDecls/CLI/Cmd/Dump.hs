@@ -25,23 +25,16 @@ import GHC.Compat
 run
   :: FilePath
   -> String
-  -> Maybe FilePath
   -> IO ()
-run root packageName mPackageDatabase = runGhc (Just root) $ do
-  let packageDatabaseOption =
-        case mPackageDatabase of
-          Nothing -> mempty
-          Just dbPath -> "-package-db=" ++ dbPath
+run root packageName = runGhc (Just root) $ do
   let args :: [Located String] =
         map
           noLoc
-          $ ["-hide-all-packages"]
-            ++ [packageDatabaseOption]
-            ++ [ "-package=" ++ packageName
-               , "-dppr-cols=1000"
-               , "-fprint-explicit-runtime-reps"
-               , "-fprint-explicit-foralls"
-               ]
+          [ "-package=" ++ packageName
+          , "-dppr-cols=1000"
+          , "-fprint-explicit-runtime-reps"
+          , "-fprint-explicit-foralls"
+          ]
   dflags <- do
     dflags <- getSessionDynFlags
     logger <- getLogger

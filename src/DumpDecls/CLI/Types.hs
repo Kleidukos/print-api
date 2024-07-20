@@ -8,7 +8,6 @@ import Paths_dump_decls (version)
 
 data Options = Options
   { packageName :: String
-  , packageDatabase :: Maybe FilePath
   }
   deriving stock (Show, Eq)
 
@@ -18,17 +17,12 @@ parseOptions =
     <$> option
       str
       (long "package-name" <> short 'p' <> metavar "PACKAGE NAME" <> help "Name of the package")
-    <*> optional
-      ( option
-          str
-          (long "package-db" <> metavar "PACKAGE DATABASE" <> help "Path to the package database")
-      )
 
 runOptions
   :: Options
   -> IO ()
-runOptions (Options packageName mPackageDatabase) = do
-  run libdir packageName mPackageDatabase
+runOptions (Options packageName) = do
+  run libdir packageName
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc =
