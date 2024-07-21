@@ -14,11 +14,11 @@ test: ## Run the test suite
 	@cabal test
 
 lint: ## Run the code linter (HLint)
-	@find app src -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
+	@find app src compat -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
 style: ## Run the code styler (fourmolu and cabal-fmt)
 	@cabal-fmt -i *.cabal
-	@fourmolu -q --mode inplace src app
+	@fourmolu -q --mode inplace src app compat
 
 tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c
