@@ -88,7 +88,7 @@ jobs:
           DIR=$(dirname $PRINTAPI_EXEC)
           FILE=$(basename $PRINTAPI_EXEC)
           version=$(./distribution/print-api --version)
-          PRINTAPI_EXEC_TAR=print-api-${version}-${{ runner.os }}-${{ env.ARCH }}.tar.gz
+          PRINTAPI_EXEC_TAR=print-api-${version}-${{ runner.os }}-${{ matrix.ghc }}-${{ env.ARCH }}.tar.gz
           tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
           echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
       - name: Upload the print-api executable
@@ -160,7 +160,7 @@ jobs:
           DIR=$(dirname $PRINTAPI_EXEC)
           FILE=$(basename $PRINTAPI_EXEC)
           version=$(./distribution/print-api --version)
-          PRINTAPI_EXEC_TAR=print-api-${version}-${{ runner.os }}-static-${{ env.ARCH }}.tar.gz
+          PRINTAPI_EXEC_TAR=print-api-${version}-${{ runner.os }}-static-${{ matrix.ghc }}-${{ env.ARCH }}.tar.gz
           tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
           echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
 

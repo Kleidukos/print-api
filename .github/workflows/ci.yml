@@ -71,7 +71,7 @@ jobs:
           .github/workflows/process-binaries.sh
           DIR=$(dirname $PRINTAPI_EXEC)
           FILE=$(basename $PRINTAPI_EXEC)
-          PRINTAPI_EXEC_TAR=print-api-head-${{ runner.os }}-${{ env.ARCH }}.tar.gz
+          PRINTAPI_EXEC_TAR=print-api-head-${{ runner.os }}-${{ matrix.ghc }}-${{ env.ARCH }}.tar.gz
           tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
           echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
       - name: Upload the print-api executable
@@ -140,7 +140,7 @@ jobs:
           .github/workflows/process-binaries.sh
           DIR=$(dirname $PRINTAPI_EXEC)
           FILE=$(basename $PRINTAPI_EXEC)
-          PRINTAPI_EXEC_TAR=print-api-head-${{ runner.os }}-static-${{ env.ARCH }}.tar.gz
+          PRINTAPI_EXEC_TAR=print-api-head-${{ runner.os }}-static-${{ matrix.ghc }}-${{ env.ARCH }}.tar.gz
           tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
           echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
 
