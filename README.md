@@ -11,6 +11,14 @@ The tool can be used with the following GHC versions:
 * 9.8.2
 * 9.6.6
 
+[Releases](https://github.com/Kleidukos/print-api/releases/latest) provide binaries for the following operating systems:
+
+* Linux x86_64 (glibc, dynamic)
+* Linux x86_64 (musl, static)
+* macOS arm64
+
+Pick the one that matches your operating system *and* GHC version.
+
 ## Usage
 
 Go in your project and build it with the GHC environment files enabled:
