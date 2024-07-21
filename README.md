@@ -1,5 +1,7 @@
 # print-api
 
+_(If you want to use this tool as a GitHub Workflow, check out [diff-package-api](https://github.com/Kleidukos/diff-package-api/))_
+
 Taken from the GHC CI scripts, this tool prints a human-readable representation of the exposed interface of Haskell modules that you
 can use in CI to ensure that you do not mistakenly introduce a regression.
 
