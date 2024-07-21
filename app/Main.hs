@@ -3,7 +3,7 @@ module Main where
 import Options.Applicative
 import System.IO
 
-import DumpDecls.CLI.Types
+import PrintApi.CLI.Types
 
 main :: IO ()
 main = do

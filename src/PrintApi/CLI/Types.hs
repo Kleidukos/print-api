@@ -1,10 +1,10 @@
-module DumpDecls.CLI.Types where
+module PrintApi.CLI.Types where
 
 import Data.Version (showVersion)
-import DumpDecls.CLI.Cmd.Dump (run)
 import GHC.Paths (libdir)
 import Options.Applicative
-import Paths_dump_decls (version)
+import Paths_print_api (version)
+import PrintApi.CLI.Cmd.Dump (run)
 
 data Options = Options
   { packageName :: String

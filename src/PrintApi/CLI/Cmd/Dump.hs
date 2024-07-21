@@ -1,4 +1,4 @@
-module DumpDecls.CLI.Cmd.Dump where
+module PrintApi.CLI.Cmd.Dump where
 
 import Control.Monad.IO.Class
 import Data.Function (on)
@@ -19,8 +19,8 @@ import GHC.Unit.Types (UnitId)
 import GHC.Utils.Outputable
 import Prelude hiding ((<>))
 
-import DumpDecls.IgnoredDeclarations
 import GHC.Compat
+import PrintApi.IgnoredDeclarations
 
 run
   :: FilePath

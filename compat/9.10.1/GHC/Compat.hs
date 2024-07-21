@@ -5,7 +5,7 @@ import GHC (ModuleInfo, modInfoExports)
 import GHC.Iface.Syntax (AltPpr (..), ShowForAllFlag (..), ShowHowMuch (..), ShowSub (..))
 import GHC.Types.Name (OccName, nameOccName)
 
-import DumpDecls.IgnoredDeclarations
+import PrintApi.IgnoredDeclarations
 
 mkShowSub :: ModuleInfo -> ShowSub
 mkShowSub mod_info =

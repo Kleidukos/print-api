@@ -1,4 +1,4 @@
-module DumpDecls.IgnoredDeclarations
+module PrintApi.IgnoredDeclarations
   ( ignoredOccNames
   , ignoredOccName
   , ignoredTyCon

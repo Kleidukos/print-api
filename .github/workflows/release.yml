@@ -18,7 +18,7 @@ jobs:
         id: set-matrix
         uses: kleidukos/get-tested@v0.1.7.1
         with:
-          cabal-file: dump-decls.cabal
+          cabal-file: print-api.cabal
           ubuntu-version: 'latest'
           macos-version: 'latest'
           version: 0.1.7.1
@@ -33,7 +33,7 @@ jobs:
         id: set-matrix
         uses: kleidukos/get-tested@v0.1.7.1
         with:
-          cabal-file: dump-decls.cabal
+          cabal-file: print-api.cabal
           version: 0.1.7.1
           ubuntu-version: 'latest'
   tests:
@@ -74,28 +74,28 @@ jobs:
 
       - name: Install
         run: |
-          bin=$(cabal -v0 --project-file=cabal.static.project list-bin dump-decls)
+          bin=$(cabal -v0 --project-file=cabal.static.project list-bin print-api)
           mkdir distribution
-          cp ${bin} distribution/dump-decls
+          cp ${bin} distribution/print-api
 
       - name: File type
-        run: file distribution/dump-decls
+        run: file distribution/print-api
 
-      - name: Package the dump-decls executable
+      - name: Package the print-api executable
         run: |
-          GETTESTED_EXEC=distribution/dump-decls
+          PRINTAPI_EXEC=distribution/print-api
           .github/workflows/process-binaries.sh
-          DIR=$(dirname $GETTESTED_EXEC)
-          FILE=$(basename $GETTESTED_EXEC)
-          version=$(./distribution/dump-decls --version)
-          GETTESTED_EXEC_TAR=dump-decls-${version}-${{ runner.os }}-${{ env.ARCH }}.tar.gz
-          tar -czvf $GETTESTED_EXEC_TAR -C $DIR $FILE
-          echo GETTESTED_EXEC_TAR=$GETTESTED_EXEC_TAR >> $GITHUB_ENV
-      - name: Upload the dump-decls executable
+          DIR=$(dirname $PRINTAPI_EXEC)
+          FILE=$(basename $PRINTAPI_EXEC)
+          version=$(./distribution/print-api --version)
+          PRINTAPI_EXEC_TAR=print-api-${version}-${{ runner.os }}-${{ env.ARCH }}.tar.gz
+          tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
+          echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
+      - name: Upload the print-api executable
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: ${{ env.GETTESTED_EXEC_TAR }}
+          path: ${{ env.PRINTAPI_EXEC_TAR }}
 
   build-alpine:
     name: ${{ matrix.ghc }} on alpine-3.19
@@ -146,29 +146,29 @@ jobs:
 
       - name: Install
         run: |
-          bin=$(cabal -v0 --project-file=cabal.static.project list-bin dump-decls)
+          bin=$(cabal -v0 --project-file=cabal.static.project list-bin print-api)
           mkdir distribution
-          cp ${bin} distribution/dump-decls
+          cp ${bin} distribution/print-api
 
       - name: File type
-        run: file distribution/dump-decls
+        run: file distribution/print-api
 
-      - name: Package the dump-decls executable
+      - name: Package the print-api executable
         run: |
-          GETTESTED_EXEC=distribution/dump-decls
+          PRINTAPI_EXEC=distribution/print-api
           .github/workflows/process-binaries.sh
-          DIR=$(dirname $GETTESTED_EXEC)
-          FILE=$(basename $GETTESTED_EXEC)
-          version=$(./distribution/dump-decls --version)
-          GETTESTED_EXEC_TAR=dump-decls-${version}-${{ runner.os }}-static-${{ env.ARCH }}.tar.gz
-          tar -czvf $GETTESTED_EXEC_TAR -C $DIR $FILE
-          echo GETTESTED_EXEC_TAR=$GETTESTED_EXEC_TAR >> $GITHUB_ENV
+          DIR=$(dirname $PRINTAPI_EXEC)
+          FILE=$(basename $PRINTAPI_EXEC)
+          version=$(./distribution/print-api --version)
+          PRINTAPI_EXEC_TAR=print-api-${version}-${{ runner.os }}-static-${{ env.ARCH }}.tar.gz
+          tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
+          echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
 
-      - name: Upload dump-decls executable to workflow artifacts
+      - name: Upload print-api executable to workflow artifacts
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: ${{ env.GETTESTED_EXEC_TAR }}
+          path: ${{ env.PRINTAPI_EXEC_TAR }}
 
   release:
     name: Create a GitHub Release with the binary artifacts
