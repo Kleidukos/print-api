@@ -74,7 +74,7 @@ jobs:
           tar -czvf $GETTESTED_EXEC_TAR -C $DIR $FILE
           echo GETTESTED_EXEC_TAR=$GETTESTED_EXEC_TAR >> $GITHUB_ENV
       - name: Upload the dump-decls executable
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifact
           path: ${{ env.GETTESTED_EXEC_TAR }}
@@ -144,7 +144,7 @@ jobs:
           echo GETTESTED_EXEC_TAR=$GETTESTED_EXEC_TAR >> $GITHUB_ENV
 
       - name: Upload dump-decls executable to workflow artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifact
           path: ${{ env.GETTESTED_EXEC_TAR }}
