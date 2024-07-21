@@ -1,3 +1,7 @@
 # Architecture
 
-## How the GHC API is used
+## The GHC API
+
+### Compatibility over several versions
+
+### The package database
