@@ -7,6 +7,7 @@ on:
       - "v*"
 
 jobs:
+
   generate-matrix:
     name: 'Generate matrix from cabal'
     outputs:
@@ -21,6 +22,20 @@ jobs:
           ubuntu-version: 'latest'
           macos-version: 'latest'
           version: 0.1.7.1
+
+  generate-alpine-matrix:
+    name: 'Generate Alpine matrix from cabal'
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract the tested GHC versions
+        id: set-matrix
+        uses: kleidukos/get-tested@v0.1.7.1
+        with:
+          cabal-file: dump-decls.cabal
+          version: 0.1.7.1
+          ubuntu-version: 'latest'
   tests:
     name: ${{ matrix.ghc }} on ${{ matrix.os }}
     needs: generate-matrix
@@ -83,10 +98,12 @@ jobs:
           path: ${{ env.GETTESTED_EXEC_TAR }}
 
   build-alpine:
-    name: 9.10.1 on alpine-3.19
-    runs-on: ubuntu-latest
+    name: ${{ matrix.ghc }} on alpine-3.19
+    needs: generate-alpine-matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{ fromJSON(needs.generate-alpine-matrix.outputs.matrix) }}
     container: 'alpine:3.19'
-    needs: generate-matrix
     steps:
       - name: Install extra dependencies
         shell: sh
@@ -102,7 +119,7 @@ jobs:
       - uses: haskell-actions/setup@v2
         id: setup-haskell
         with:
-          ghc-version: '9.10.1'
+          ghc-version: ${{ matrix.ghc }}
           cabal-version: 'latest'
 
       - name: Configure
