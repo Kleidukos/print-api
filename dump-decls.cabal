@@ -9,6 +9,7 @@ copyright:          (c) 2023 Ben Gamari
 extra-source-files:
   compat/9.10.1/GHC/Compat.hs
   compat/9.6.6/GHC/Compat.hs
+  compat/9.8.2/GHC/Compat.hs
 
 tested-with:        GHC ==9.6.6 || ==9.10.1
 
@@ -46,6 +47,9 @@ library
 
   if impl(ghc ==9.10.1)
     hs-source-dirs: compat/9.10.1
+
+  if impl(ghc ==9.8.2)
+    hs-source-dirs: compat/9.8.2
 
   if impl(ghc ==9.6.6)
     hs-source-dirs: compat/9.6.6
