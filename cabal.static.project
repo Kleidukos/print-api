@@ -1,0 +1,4 @@
+import: ./cabal.release.project
+
+executable-static: true
+split-sections: True
