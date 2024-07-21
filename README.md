@@ -19,32 +19,8 @@ The tool can be used with the following GHC versions:
 
 Pick the one that matches your operating system *and* GHC version.
 
-## Usage
+## 🤸 Documentation
 
-Go in your project and build it with the GHC environment files enabled:
+Read the [Manual](./doc/MANUAL.md) to learn how to use this tool
 
-```
-$ cabal build --write-ghc-environment-files=always
-```
-
-Then run the `print-api` binary from within the same directory:
-
-```
-$ print-api -p <my-package>
-```
-
-For instance in the [`text-display`](https://github.com/haskell-text/text-display) repository:
-
-```haskell
-❯ print-api -p text-display
-
-module Data.Text.Display where
-  type Display :: * -> Constraint
-  class Display a where
-    displayBuilder :: a -> Data.Text.Internal.Builder.Builder
-    displayList :: [a] -> Data.Text.Internal.Builder.Builder
-    displayPrec :: GHC.Types.Int -> a -> Data.Text.Internal.Builder.Builder
-    {-# MINIMAL displayBuilder | displayPrec #-}
-    {-# MINIMAL displayBuilder | displayPrec #-}
-  type role OpaqueInstance phantom representational
-```
+Additional details can be found in the [Architecture document](./doc/ARCHITECTURE.md)
