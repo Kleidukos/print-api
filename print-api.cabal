@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               print-api
-version:            0.1.0.0
+version:            0.1.0.1
 synopsis:           Print the API of a package.
 license:            BSD-3-Clause
 author:             Ben Gamari, Hécate Kleidukos
