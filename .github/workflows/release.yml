@@ -7,7 +7,6 @@ on:
       - "v*"
 
 jobs:
-
   generate-matrix:
     name: 'Generate matrix from cabal'
     outputs:
@@ -37,47 +36,55 @@ jobs:
           version: 0.1.7.1
           ubuntu-version: 'latest'
 
-  tests:
+  builds:
     name: ${{ matrix.ghc }} on ${{ matrix.os }}
     needs: generate-matrix
     runs-on: ${{ matrix.os }}
     strategy:
       matrix: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
     steps:
-      - name: Checkout base repo
-        uses: actions/checkout@v4
       - name: "Install tools"
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-            .github/workflows/install-tools.sh
+          sudo apt install upx-ucl
+
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+
       - name: Set up Haskell
         id: setup-haskell
         uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: 'latest'
+
       - name: Configure
         run: |
           ARCHITECTURE=$(uname -m)
           echo "ARCH=$ARCHITECTURE" >> $GITHUB_ENV
           echo ${{ env.ARCH }}
           cabal configure --enable-tests
+
       - name: Freeze
         run: cabal freeze --project-file=cabal.release.project
+
       - name: Cache
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4
         with:
           path: ${{ steps.setup-haskell.outputs.cabal-store }}
-          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('**/plan.json') }}
-          restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
+          key: ${{ runner.os }}-ghc-${{ steps.setup-haskell.outputs.ghc-version }}-${{ hashFiles('**/plan.json') }}
+          restore-keys: ${{ runner.os }}-ghc-${{ steps.setup-haskell.outputs.ghc-version }}-
 
       - name: Build
         run: cabal build --project-file=cabal.release.project
 
       - name: Install
         run: |
-          bin=$(cabal -v0 --project-file=cabal.release.project list-bin print-api)
           mkdir distribution
-          cp ${bin} distribution/print-api
+          for executable in 'print-api' 'print-api-${{ matrix.ghc }}'; do
+            path=$(cabal -v0 --project-file=cabal.release.project list-bin "print-api:exe:${executable}")
+            cp "${path}" distribution
+          done
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
@@ -89,20 +96,26 @@ jobs:
         with:
           report_paths: "report.xml"
 
-      - name: File type
-        run: file distribution/print-api
+      - name: File type of executables
+        run: file distribution/*
 
-      - name: Package the print-api executable
+      - name: Post-process executables
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          PRINTAPI_EXEC=distribution/print-api
-          .github/workflows/process-binaries.sh
-          DIR=$(dirname $PRINTAPI_EXEC)
-          FILE=$(basename $PRINTAPI_EXEC)
+          for executable in distribution/*; do
+            strip "${executable}"
+            upx -9 "${executable}"
+          done
+
+      - name: Package the executables
+        run: |
+          executables=( $(ls distribution) )
           version=$(./distribution/print-api --version)
-          PRINTAPI_EXEC_TAR=print-api-${version}-${{ runner.os }}-${{ matrix.ghc }}-${{ env.ARCH }}.tar.gz
-          tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
-          echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
-      - name: Upload the print-api executable
+          archive="print-api-${version}-${{ runner.os }}-${{ env.ARCH }}-ghc-${{ matrix.ghc }}.tar.gz"
+          tar -c -z -v -f "${archive}" -C distribution "${executables[@]}"
+          echo "PRINTAPI_EXEC_TAR=${archive}" >> $GITHUB_ENV
+
+      - name: Upload the executables archive
         uses: actions/upload-artifact@v3
         with:
           name: artifact
@@ -125,10 +138,12 @@ jobs:
                 musl-dev ncurses-dev perl pkgconfig \
                 sudo tar upx xz zlib-dev zlib-static
 
-      - uses: actions/checkout@v4
+      - name: Checkout the repository
+        uses: actions/checkout@v4
 
-      - uses: haskell-actions/setup@v2
+      - name: Set up Haskell
         id: setup-haskell
+        uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: 'latest'
@@ -143,20 +158,23 @@ jobs:
       - name: Freeze
         run: cabal freeze --project-file=cabal.static.project
 
-      - uses: actions/cache@v4
+      - name: Cache
+        uses: actions/cache@v4
         with:
           path: ${{ steps.setup-haskell.outputs.cabal-store }}
           key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('**/plan.json') }}
-          restore-keys: ${{ runner.os }}-${{ steps.setup.outputs.ghc-version }}-
+          restore-keys: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-
 
       - name: Build
         run: cabal build --project-file=cabal.static.project
 
       - name: Install
         run: |
-          bin=$(cabal -v0 --project-file=cabal.static.project list-bin print-api)
           mkdir distribution
-          cp ${bin} distribution/print-api
+          for executable in 'print-api' 'print-api-${{ matrix.ghc }}'; do
+            path=$(cabal -v0 --project-file=cabal.static.project list-bin "print-api:exe:${executable}")
+            cp "${path}" distribution
+          done
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
@@ -168,41 +186,77 @@ jobs:
         with:
           report_paths: "report.xml"
 
-      - name: File type
-        run: file distribution/print-api
+      - name: File type of executables
+        run: file distribution/*
 
-      - name: Package the print-api executable
+      - name: Post-process executables
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          PRINTAPI_EXEC=distribution/print-api
-          .github/workflows/process-binaries.sh
-          DIR=$(dirname $PRINTAPI_EXEC)
-          FILE=$(basename $PRINTAPI_EXEC)
-          version=$(./distribution/print-api --version)
-          PRINTAPI_EXEC_TAR=print-api-${version}-${{ runner.os }}-static-${{ matrix.ghc }}-${{ env.ARCH }}.tar.gz
-          tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
-          echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
+          for executable in distribution/*; do
+            strip "${executable}"
+            upx -9 "${executable}"
+          done
 
-      - name: Upload print-api executable to workflow artifacts
+      - name: Package the executables
+        shell: bash
+        run: |
+          executables=( $(ls distribution) )
+          version=$(./distribution/print-api --version)
+          archive="print-api-${version}-${{ runner.os }}-${{ env.ARCH }}-static-ghc-${{ matrix.ghc }}.tar.gz"
+          tar -c -z -v -f "${archive}" -C distribution "${executables[@]}"
+          echo "PRINTAPI_EXEC_TAR=${archive}" >> $GITHUB_ENV
+
+      - name: Upload the executables archive
         uses: actions/upload-artifact@v3
         with:
           name: artifact
           path: ${{ env.PRINTAPI_EXEC_TAR }}
 
+  # NOTE: We run upx on the executables in every linux job to compress them.
+  # That means, the assets that are linked dynamically _appear_ to be statically
+  # linked after that, despite not being compiled statically in Alpine with
+  # musl. They are still dynamically-linked once they are decompresed.
+  # See: https://stackoverflow.com/questions/20740625/does-upx-magically-transform-binaries-from-dynamically-linked-into-statically-li
   release:
-    name: Create a GitHub Release with the binary artifacts
+    name: Create a GitHub Release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     needs: ['tests', 'build-alpine']
 
     steps:
     - uses: actions/download-artifact@v3
       with:
         name: artifact
-        path: ./out
+        path: ./artifacts
+
+    - name: Prepare release
+      shell: bash
+      run: |
+        create-tarball() {
+          local name="${1}"
+          local pattern="${2}"
+
+          echo "::group::Creating release tarball ${name}.tar.gz"
+          mkdir "${name}"
+          find artifacts -type f -name "${pattern}" -exec tar -x -z -f {} -C "${name}" \;
+          local files=( $(find "${name}" -type f -printf '%P\n') )
+          if [[ ${#files[@]} > 0 ]]; then
+            echo "Packaging ${#files[@]} files"
+            tar -c -z -v -f "release/${name}.tar.gz" -C "${name}" "${files[@]}"
+          else
+            echo "No files to package"
+          fi
+          echo '::endgroup::'
+        }
+
+        mkdir release
+        for base in $(ls artifacts | cut -d - -f -5 | sort --uniq); do
+          create-tarball "${base}" "${base}-ghc-*.tar.gz"
+          create-tarball "${base}-static" "${base}-static-ghc-*.tar.gz"
+        done
 
     - name: Release
       uses: softprops/action-gh-release@v2
-      if: startsWith(github.ref, 'refs/tags/')
       with:
+        prerelease: ${{ startsWith(github.ref, 'refs/tags/v') }}
         draft: true
-        files: ./out/*
+        files: ./release/*

@@ -105,6 +105,7 @@ executable print-api
   build-depends:
     , base
     , bytestring
+    , optparse-applicative
     , print-api
 
   default-language: GHC2021

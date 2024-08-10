@@ -4,8 +4,6 @@ module PrintApi.CLI.Types
   ( Options (..)
   , parseOptions
   , runOptions
-  , readCabalizedProcess
-  , runCabalizedProcess
   , withInfo
   ) where
 
