@@ -57,6 +57,9 @@ cabalizedProc
   -> [String]
   -> IO (ProcessConfig () () ())
 cabalizedProc ghcVersion exe args =
+  -- If there is a GHC_ENVIRONMENT environment variable set, assume that we got
+  -- called using `cabal exec`.
+  -- Hopefully some day someone comes up with a saner way to test this.
   lookupEnv "GHC_ENVIRONMENT" <&> \case
     Just{} -> Process.proc exe args
     Nothing ->
