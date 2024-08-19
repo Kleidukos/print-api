@@ -2,8 +2,9 @@ module PrintApi.CLI.Cmd.Dump where
 
 import Control.Monad.IO.Class
 import Data.Function (on)
-import Data.List (sortBy)
+import Data.List qualified as List
 import GHC
+import GHC.Compat
 import GHC.Core.Class (classMinimalDef)
 import GHC.Core.InstEnv (instEnvElts, instanceHead)
 import GHC.Data.FastString (fsLit)
@@ -17,16 +18,34 @@ import GHC.Unit.Info (PackageName (..), UnitInfo, unitExposedModules, unitId)
 import GHC.Unit.State (lookupPackageName, lookupUnitId)
 import GHC.Unit.Types (UnitId)
 import GHC.Utils.Outputable
+import System.IO qualified as System
+import System.OsPath (OsPath)
+import System.OsPath qualified as OsPath
 import Prelude hiding ((<>))
 
-import GHC.Compat
 import PrintApi.IgnoredDeclarations
 
 run
   :: FilePath
+  -> Maybe OsPath
   -> String
   -> IO ()
-run root packageName = runGhc (Just root) $ do
+run root mModuleIgnoreList packageName = do
+  userIgnoredModules <- case mModuleIgnoreList of
+    Nothing -> pure []
+    Just ignoreListPath -> do
+      ignoreListFilePath <- liftIO $ OsPath.decodeFS ignoreListPath
+      modules <- lines <$> liftIO (System.readFile ignoreListFilePath)
+      pure $ List.map mkModuleName modules
+  rendered <- computePackageAPI root userIgnoredModules packageName
+  liftIO $ putStrLn rendered
+
+computePackageAPI
+  :: FilePath
+  -> [ModuleName]
+  -> String
+  -> IO String
+computePackageAPI root userIgnoredModules packageName = runGhc (Just root) $ do
   let args :: [Located String] =
         map
           noLoc
@@ -51,25 +70,24 @@ run root packageName = runGhc (Just root) $ do
     Just unit_info -> pure unit_info
     Nothing -> fail "unknown package"
 
-  decls_doc <- reportUnitDecls unit_info
+  decls_doc <- reportUnitDecls userIgnoredModules unit_info
   insts_doc <- reportInstances
 
   name_ppr_ctx <- GHC.getNamePprCtx
-  let rendered = showSDocForUser dflags unit_state name_ppr_ctx (vcat [decls_doc, insts_doc])
-  liftIO $ putStrLn rendered
+  pure $ showSDocForUser dflags unit_state name_ppr_ctx (vcat [decls_doc, insts_doc])
 
 ignoredTyThing :: TyThing -> Bool
 ignoredTyThing _ = False
 
-reportUnitDecls :: UnitInfo -> Ghc SDoc
-reportUnitDecls unit_info = do
+reportUnitDecls :: [ModuleName] -> UnitInfo -> Ghc SDoc
+reportUnitDecls userIgnoredModules unit_info = do
   let exposed :: [ModuleName]
       exposed = map fst (unitExposedModules unit_info)
-  vcat <$> mapM (reportModuleDecls $ unitId unit_info) exposed
+  vcat <$> mapM (reportModuleDecls userIgnoredModules $ unitId unit_info) exposed
 
-reportModuleDecls :: UnitId -> ModuleName -> Ghc SDoc
-reportModuleDecls unit_id modl_nm
-  | modl_nm `elem` ignoredModules = do
+reportModuleDecls :: [ModuleName] -> UnitId -> ModuleName -> Ghc SDoc
+reportModuleDecls userIgnoredModules unit_id modl_nm
+  | modl_nm `elem` (userIgnoredModules ++ ignoredModules) = do
       pure $ vcat [mod_header, text "-- ignored", text ""]
   | otherwise = do
       modl <- GHC.lookupQualifiedModule (OtherPkg unit_id) modl_nm
@@ -80,7 +98,7 @@ reportModuleDecls unit_id modl_nm
 
       Just name_ppr_ctx <- mkNamePprCtxForModule mod_info
       let names = GHC.modInfoExports mod_info
-      let sorted_names = sortBy (compare `on` nameOccName) names
+      let sorted_names = List.sortBy (compare `on` nameOccName) names
       things <- mapM GHC.lookupName sorted_names
       let contents =
             vcat $
@@ -123,7 +141,7 @@ reportInstances = do
       , text "-- Instances:"
       ]
         ++ [ ppr inst
-           | inst <- sortBy compareInstances (instEnvElts instances)
+           | inst <- List.sortBy compareInstances (instEnvElts instances)
            , not $ ignoredInstance inst
            ]
 
