@@ -2,7 +2,7 @@ deps: ## Install the dependencies of the backend
 	@cabal build --only-dependencies
 
 build: ## Build the project in fast mode
-	@cabal build
+	@cabal build -j
 
 clean: ## Remove compilation artifacts
 	@cabal clean
@@ -11,7 +11,7 @@ repl: ## Start a REPL
 	@cabal repl
 
 test: ## Run the test suite
-	@cabal test
+	@cabal test -j
 
 lint: ## Run the code linter (HLint)
 	@find app src compat -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
