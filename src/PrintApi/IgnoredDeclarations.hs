@@ -9,6 +9,7 @@ module PrintApi.IgnoredDeclarations
   ) where
 
 import Data.List (isPrefixOf)
+import Data.List qualified as List
 import GHC (ModuleInfo, modInfoExports)
 import GHC.Core.InstEnv (ClsInst, instanceHead)
 import GHC.Core.TyCon (TyCon)
@@ -96,7 +97,7 @@ ignoredType = any ignoredTyCon . nonDetEltsUniqSet . tyConsOfType
 
 ignoredModules :: [ModuleName]
 ignoredModules =
-  map
+  List.map
     mkModuleName
     (unstableModules ++ platformDependentModules)
   where

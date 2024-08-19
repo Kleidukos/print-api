@@ -68,6 +68,7 @@ library
     , base
     , bytestring
     , extra
+    , filepath
     , ghc
     , ghc-boot
     , ghc-paths
@@ -76,11 +77,11 @@ library
     , typed-process
 
 executable print-api
-  import:           extensions
-  import:           ghc-options
-  import:           rts-options
-  hs-source-dirs:   app
-  main-is:          Main.hs
+  import:         extensions
+  import:         ghc-options
+  import:         rts-options
+  hs-source-dirs: app
+  main-is:        Main.hs
   build-depends:
     , base
     , ghc
@@ -88,4 +89,28 @@ executable print-api
     , optparse-applicative
     , print-api
 
-  default-language: Haskell2010
+test-suite print-api-test
+  import:         extensions
+  import:         ghc-options
+  import:         rts-options
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is:        Main.hs
+  other-modules:
+    IgnoreList
+    Utils
+
+  build-depends:
+    , base
+    , bytestring
+    , directory
+    , extra
+    , filepath
+    , ghc
+    , print-api
+    , tasty
+    , tasty-coverage
+    , tasty-golden
+    , tasty-hunit
+    , tasty-test-reporter
+    , typed-process
