@@ -3,6 +3,7 @@ module PrintApi.CLI.Cmd.Dump where
 import Control.Monad.IO.Class
 import Data.Function (on)
 import Data.List qualified as List
+import Data.List.Extra qualified as List
 import GHC
 import GHC.Compat
 import GHC.Core.Class (classMinimalDef)
@@ -74,7 +75,7 @@ computePackageAPI root userIgnoredModules packageName = runGhc (Just root) $ do
   insts_doc <- reportInstances
 
   name_ppr_ctx <- GHC.getNamePprCtx
-  pure $ showSDocForUser dflags unit_state name_ppr_ctx (vcat [decls_doc, insts_doc])
+  pure $ List.trim $ showSDocForUser dflags unit_state name_ppr_ctx (vcat [decls_doc, insts_doc])
 
 ignoredTyThing :: TyThing -> Bool
 ignoredTyThing _ = False
