@@ -37,7 +37,7 @@ generateServantClientAPIWithIgnoreList = do
   assertExitSuccess "`cabal exec -v0 -- ghc --print-libdir`" exitCode
   assertExitSuccess "Fetch the archive of servant-client" =<< Process.runProcess (Process.shell "cabal get servant-client-0.20 --destdir=../")
   liftIO $ Directory.setCurrentDirectory "../servant-client-0.20"
-  let buildServantClient = Process.shell "cabal build --allow-newer --write-ghc-environment-files=always"
+  let buildServantClient = Process.shell "cabal build -j --allow-newer --write-ghc-environment-files=always"
   assertExitSuccess "Build servant-client" =<< Process.runProcess buildServantClient
   ignoreListPath <- liftIO $ OsPath.makeAbsolute [osp|../print-api/test/golden/servant-client-ignore-list.txt|]
   ignoreListFilePath <- liftIO $ OsPath.decodeUtf ignoreListPath

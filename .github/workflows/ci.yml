@@ -129,7 +129,7 @@ jobs:
           cp ${bin} distribution/print-api
 
       - name: Test
-        run: cabal test --project-file=cabal.static.project --test-options "--xml=report.xml" all
+        run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/report.xml" all
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4

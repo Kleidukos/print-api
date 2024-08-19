@@ -1,4 +1,3 @@
-
 module Servant.Client where
   (//) :: forall a b. a -> (a -> b) -> b
   (/:) :: forall a b c. (a -> b -> c) -> b -> a -> c
