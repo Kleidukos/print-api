@@ -36,6 +36,7 @@ jobs:
           cabal-file: print-api.cabal
           version: 0.1.7.1
           ubuntu-version: 'latest'
+
   tests:
     name: ${{ matrix.ghc }} on ${{ matrix.os }}
     needs: generate-matrix
@@ -80,7 +81,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
-        run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/reportt.xml" all
+        run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/report.xml" all
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
@@ -159,7 +160,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
-        run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/reportt.xml" all
+        run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/report.xml" all
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
