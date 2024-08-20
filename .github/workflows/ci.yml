@@ -127,6 +127,7 @@ jobs:
           bin=$(cabal -v0 --project-file=cabal.static.project list-bin print-api)
           mkdir distribution
           cp ${bin} distribution/print-api
+          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
         run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/report.xml" all
