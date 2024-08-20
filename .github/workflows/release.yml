@@ -109,12 +109,12 @@ jobs:
           path: ${{ env.PRINTAPI_EXEC_TAR }}
 
   build-alpine:
-    name: ${{ matrix.ghc }} on alpine-3.19
+    name: ${{ matrix.ghc }} on alpine-3.20
     needs: generate-alpine-matrix
     runs-on: ${{ matrix.os }}
     strategy:
       matrix: ${{ fromJSON(needs.generate-alpine-matrix.outputs.matrix) }}
-    container: 'alpine:3.19'
+    container: 'alpine:3.20'
     steps:
       - name: Install extra dependencies
         shell: sh
