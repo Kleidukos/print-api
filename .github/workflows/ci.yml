@@ -6,6 +6,7 @@ on:
     branches: ['main']
 
 jobs:
+
   generate-matrix:
     name: 'Generate matrix from cabal'
     outputs:
@@ -184,6 +185,7 @@ jobs:
           done
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
           echo "REPORT_NAME=report-${{ env.KERNEL }}-static-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
+          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
         run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/${REPORT_NAME}.xml" all
