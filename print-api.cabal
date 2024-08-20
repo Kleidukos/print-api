@@ -75,6 +75,7 @@ library
     , optparse-applicative
     , text
     , typed-process
+    , haddock-library
 
 executable print-api
   import:         extensions

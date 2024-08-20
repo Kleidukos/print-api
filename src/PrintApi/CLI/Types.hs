@@ -1,3 +1,11 @@
+-- |
+--  Module      : PrintApi.CLI.Types
+--  Copyright   : © Hécate, 2024
+--  License     : MIT
+--  Maintainer  : hecate@glitchbra.in
+--  Visibility  : Public
+--
+--  The option parsing for the CLI
 module PrintApi.CLI.Types where
 
 import Data.ByteString.Lazy.Char8 qualified as ByteString

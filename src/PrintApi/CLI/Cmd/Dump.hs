@@ -1,7 +1,15 @@
+-- |
+--  Module      : PrintApi.CLI.Cmd.Dump
+--  Copyright   : © Hécate, 2024
+--  License     : MIT
+--  Maintainer  : hecate@glitchbra.in
+--  Visibility  : Public
+--
+--  The processing of package information
 module PrintApi.CLI.Cmd.Dump where
 
 import Control.Monad.IO.Class
-import Data.Function (on)
+import Data.Function ( (&), on )
 import Data.List qualified as List
 import Data.List.Extra qualified as List
 import GHC
@@ -23,6 +31,7 @@ import System.IO qualified as System
 import System.OsPath (OsPath)
 import System.OsPath qualified as OsPath
 import Prelude hiding ((<>))
+import qualified Data.Maybe as Maybe
 
 import PrintApi.IgnoredDeclarations
 
@@ -40,6 +49,38 @@ run root mModuleIgnoreList packageName = do
       pure $ List.map mkModuleName modules
   rendered <- computePackageAPI root userIgnoredModules packageName
   liftIO $ putStrLn rendered
+
+printPackageDocumentation 
+  :: FilePath
+  -> String
+  -> IO String
+printPackageDocumentation root packageName = runGhc (Just root) $ do
+  let args :: [Located String] =
+        map
+          noLoc
+          [ "-package=" ++ packageName
+          , "-dppr-cols=1000"
+          , "-fprint-explicit-runtime-reps"
+          , "-fprint-explicit-foralls"
+          ]
+  dflags <- do
+    dflags <- getSessionDynFlags
+    logger <- getLogger
+    (dflags', _fileish_args, _dynamicFlagWarnings) <-
+      GHC.parseDynamicFlags logger dflags args
+    pure dflags'
+
+  _ <- setProgramDynFlags dflags
+  unit_state <- hsc_units <$> getSession
+  unitId <- case lookupPackageName unit_state (PackageName $ fsLit packageName) of
+    Just unitId -> pure unitId
+    Nothing -> fail "failed to find package"
+  unitInfo <- case lookupUnitId unit_state unitId of
+    Just unitInfo -> pure unitInfo
+    Nothing -> fail "unknown package"
+  moduleDocumentation <- reportPackageDocumentation unitInfo
+  name_ppr_ctx <- GHC.getNamePprCtx
+  pure $ List.trim $ showSDocForUser dflags unit_state name_ppr_ctx moduleDocumentation
 
 computePackageAPI
   :: FilePath
@@ -64,14 +105,14 @@ computePackageAPI root userIgnoredModules packageName = runGhc (Just root) $ do
 
   _ <- setProgramDynFlags dflags
   unit_state <- hsc_units <$> getSession
-  unit_id <- case lookupPackageName unit_state (PackageName $ fsLit packageName) of
-    Just unit_id -> pure unit_id
+  unitId <- case lookupPackageName unit_state (PackageName $ fsLit packageName) of
+    Just unitId -> pure unitId
     Nothing -> fail "failed to find package"
-  unit_info <- case lookupUnitId unit_state unit_id of
-    Just unit_info -> pure unit_info
+  unitInfo <- case lookupUnitId unit_state unitId of
+    Just unitInfo -> pure unitInfo
     Nothing -> fail "unknown package"
 
-  decls_doc <- reportUnitDecls userIgnoredModules unit_info
+  decls_doc <- reportUnitDecls userIgnoredModules unitInfo
   insts_doc <- reportInstances
 
   name_ppr_ctx <- GHC.getNamePprCtx
@@ -81,17 +122,53 @@ ignoredTyThing :: TyThing -> Bool
 ignoredTyThing _ = False
 
 reportUnitDecls :: [ModuleName] -> UnitInfo -> Ghc SDoc
-reportUnitDecls userIgnoredModules unit_info = do
+reportUnitDecls userIgnoredModules unitInfo = do
   let exposed :: [ModuleName]
-      exposed = map fst (unitExposedModules unit_info)
-  vcat <$> mapM (reportModuleDecls userIgnoredModules $ unitId unit_info) exposed
+      exposed = map fst (unitExposedModules unitInfo)
+  vcat <$> mapM (reportModuleDecls userIgnoredModules $ unitId unitInfo) exposed
+
+reportPackageDocumentation :: UnitInfo -> Ghc SDoc
+reportPackageDocumentation unitInfo = do
+  let exposed :: [ModuleName]
+      exposed = map fst (unitExposedModules unitInfo)
+  vcat <$> mapM (reportModuleDocumentation (unitId unitInfo)) exposed
+
+reportModuleDocumentation :: UnitId -> ModuleName -> Ghc SDoc
+reportModuleDocumentation unitId moduleName = do
+  modl <- GHC.lookupQualifiedModule (OtherPkg unitId) moduleName
+  mb_mod_info <- GHC.getModuleInfo modl
+  mod_info <- case mb_mod_info of
+    Nothing -> fail "Failed to find module"
+    Just mod_info -> pure mod_info
+  Just name_ppr_ctx <- mkNamePprCtxForModule mod_info
+  let mod_header =
+        vcat
+          [ text ""
+          , text "module" <+> ppr moduleName <+> text "where"
+          , text ""
+          ]
+  let mDocs =
+         mod_info
+         & modInfoIface
+         & Maybe.fromJust
+         & mi_docs
+  case mDocs of
+    Nothing -> do 
+      liftIO $ putStrLn "No documentation for the interface"
+      pure empty
+    Just docs -> do 
+      let contents = getVisibility docs
+      pure $
+        withUserStyle name_ppr_ctx AllTheWay $
+          hang mod_header 2 contents
+            <> text ""
 
 reportModuleDecls :: [ModuleName] -> UnitId -> ModuleName -> Ghc SDoc
-reportModuleDecls userIgnoredModules unit_id modl_nm
-  | modl_nm `elem` (userIgnoredModules ++ ignoredModules) = do
+reportModuleDecls userIgnoredModules unitId moduleName
+  | moduleName `elem` (userIgnoredModules ++ ignoredModules) = do
       pure $ vcat [mod_header, text "-- ignored", text ""]
   | otherwise = do
-      modl <- GHC.lookupQualifiedModule (OtherPkg unit_id) modl_nm
+      modl <- GHC.lookupQualifiedModule (OtherPkg unitId) moduleName
       mb_mod_info <- GHC.getModuleInfo modl
       mod_info <- case mb_mod_info of
         Nothing -> fail "Failed to find module"
@@ -126,7 +203,7 @@ reportModuleDecls userIgnoredModules unit_id modl_nm
     mod_header =
       vcat
         [ text ""
-        , text "module" <+> ppr modl_nm <+> text "where"
+        , text "module" <+> ppr moduleName <+> text "where"
         , text ""
         ]
 
@@ -154,3 +231,11 @@ compareInstances inst1 inst2 =
   where
     (_, cls1, _tys1) = instanceHead inst1
     (_, cls2, _tys2) = instanceHead inst2
+
+
+getVisibility :: Docs -> SDoc
+getVisibility moduleDocs = 
+  let mModuleHeader = moduleDocs.docs_mod_hdr
+  in case mModuleHeader of
+        Nothing -> "Visibility: Public"
+        Just hsDoc -> pprHsDocString hsDoc.hsDocString
