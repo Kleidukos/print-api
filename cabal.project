@@ -2,6 +2,8 @@ packages: ./
 
 tests: True
 
+write-ghc-environment-files: always
+
 allow-newer:
     tasty-test-reporter:mtl
   , tasty-test-reporter:ansi-terminal

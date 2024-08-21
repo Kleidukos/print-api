@@ -5,3 +5,4 @@ tags.mtime
 *.tix
 *.local
 servant-client-actual-api.txt
+.ghc.environment.*
