@@ -1,9 +1,8 @@
 -- GHC 9.10.1 Compatibility
 module GHC.Compat where
 
-import GHC (ModuleInfo, modInfoExports)
+import GHC (ModuleInfo)
 import GHC.Iface.Syntax (AltPpr (..), ShowForAllFlag (..), ShowHowMuch (..), ShowSub (..))
-import GHC.Types.Name (OccName, nameOccName)
 
 import PrintApi.IgnoredDeclarations
 

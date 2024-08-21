@@ -1,4 +1,4 @@
--- GHC 9.6.5 Compatibility
+-- GHC 9.6.6 Compatibility
 module GHC.Compat where
 
 import GHC (ModuleInfo)
