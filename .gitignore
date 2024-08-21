@@ -4,5 +4,5 @@ tags.mtime
 .hpc
 *.tix
 *.local
-servant-client-actual-api.txt
 .ghc.environment.*
+vector-actual-api.txt

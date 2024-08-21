@@ -1,2 +1,0 @@
-Servant.Client.Internal.HttpClient
-Servant.Client.Internal.HttpClient.Streaming
