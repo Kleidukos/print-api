@@ -33,6 +33,12 @@ Then run the `print-api` binary from within the same directory:
 $ print-api -p <my-package>
 ```
 
+### Ignore list of modules
+
+By passing the `--modules-ignore-list FILE` option to `print-api`, you can specify
+a list of newline-delimited module names that will be ignored by `print-api`,
+and shown as having been ignored in the output.
+
 For instance in the [`text-display`](https://github.com/haskell-text/text-display) repository:
 
 ```haskell
