@@ -75,13 +75,13 @@ jobs:
 
       - name: Install
         run: |
-          bin=$(cabal -v0 --project-file=cabal.static.project list-bin print-api)
+          bin=$(cabal -v0 --project-file=cabal.release.project list-bin print-api)
           mkdir distribution
           cp ${bin} distribution/print-api
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
-        run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/report.xml" all
+        run: cabal test --project-file=cabal.release.project --test-options "--xml=../print-api/report.xml" all
 
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4

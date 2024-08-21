@@ -74,7 +74,7 @@ jobs:
 
       - name: Install
         run: |
-          bin=$(cabal -v0 --project-file=cabal.static.project list-bin print-api)
+          bin=$(cabal -v0 --project-file=cabal.release.project list-bin print-api)
           mkdir distribution
           cp ${bin} distribution/print-api
 
