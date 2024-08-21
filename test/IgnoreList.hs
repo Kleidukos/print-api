@@ -14,10 +14,12 @@ import Utils
 import qualified Data.ByteString.Lazy as ByteString
 import qualified System.Directory as Directory 
 
-import qualified PrintApi.CLI.Cmd.Dump as Dump
 import qualified System.Directory.OsPath as OsPath
 import qualified System.IO as System
 import qualified System.OsPath as OsPath
+import Control.Monad.Extra (whenM)
+
+import qualified PrintApi.CLI.Cmd.Dump as Dump
 
 diffCmd :: String -> String -> [String]
 diffCmd ref new = ["diff", "-u", ref, new]
@@ -33,11 +35,14 @@ spec = testGroup "Ignore list"
 
 generateServantClientAPIWithIgnoreList :: (MonadIO m) => m LazyByteString
 generateServantClientAPIWithIgnoreList = do
+  let servantClientPath = "../servant-client-0.20"
+  liftIO $ whenM (Directory.doesDirectoryExist servantClientPath) $ 
+    Directory.removeDirectoryRecursive servantClientPath
   (exitCode, stdOut, _stdErr) <- Process.readProcess $ Process.shell "cabal exec -v0 -- ghc --print-libdir"
   assertExitSuccess "`cabal exec -v0 -- ghc --print-libdir`" exitCode
   assertExitSuccess "Fetch the archive of servant-client" =<< Process.runProcess (Process.shell "cabal get servant-client-0.20 --destdir=../")
-  liftIO $ Directory.setCurrentDirectory "../servant-client-0.20"
-  let buildServantClient = Process.shell "cabal build -j --allow-newer --write-ghc-environment-files=always"
+  liftIO $ Directory.setCurrentDirectory servantClientPath
+  let buildServantClient = Process.shell "cabal build -j --write-ghc-environment-files=always"
   assertExitSuccess "Build servant-client" =<< Process.runProcess buildServantClient
   ignoreListPath <- liftIO $ OsPath.makeAbsolute [osp|../print-api/test/golden/servant-client-ignore-list.txt|]
   ignoreListFilePath <- liftIO $ OsPath.decodeUtf ignoreListPath
