@@ -39,6 +39,8 @@ By passing the `--modules-ignore-list FILE` option to `print-api`, you can speci
 a list of newline-delimited module names that will be ignored by `print-api`,
 and shown as having been ignored in the output.
 
+### Example
+
 For instance in the [`text-display`](https://github.com/haskell-text/text-display) repository:
 
 ```haskell
