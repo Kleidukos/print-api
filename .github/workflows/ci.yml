@@ -2,9 +2,11 @@ name: Tests Pipeline
 
 on:
   pull_request:
+  push:
     branches: ['main']
 
 jobs:
+
   generate-matrix:
     name: 'Generate matrix from cabal'
     outputs:
@@ -46,7 +48,7 @@ jobs:
         run: |
           sudo apt install upx-ucl
 
-      - name: Checkout the repository
+      - name: Checkout base repo
         uses: actions/checkout@v4
 
       - name: Set up Haskell
@@ -55,23 +57,20 @@ jobs:
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: 'latest'
-
       - name: Configure
         run: |
           ARCHITECTURE=$(uname -m)
           echo "ARCH=$ARCHITECTURE" >> $GITHUB_ENV
           echo ${{ env.ARCH }}
           cabal configure --enable-tests
-
       - name: Freeze
         run: cabal freeze --project-file=cabal.release.project
-
       - name: Cache
-        uses: actions/cache@v4
+        uses: actions/cache@v4.0.2
         with:
           path: ${{ steps.setup-haskell.outputs.cabal-store }}
-          key: ${{ runner.os }}-ghc-${{ steps.setup-haskell.outputs.ghc-version }}-${{ hashFiles('**/plan.json') }}
-          restore-keys: ${{ runner.os }}-ghc-${{ steps.setup-haskell.outputs.ghc-version }}-
+          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('**/plan.json') }}
+          restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
       - name: Build
         run: cabal build --project-file=cabal.release.project
@@ -83,8 +82,9 @@ jobs:
             path=$(cabal -v0 --project-file=cabal.release.project list-bin "print-api:exe:${executable}")
             cp "${path}" distribution
           done
+          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
-      - name: File type of executables
+      - name: File type
         run: file distribution/*
 
       - name: Post-process executables
@@ -96,11 +96,12 @@ jobs:
           done
 
       - name: Package the executables
+        shell: bash
         run: |
           executables=( $(ls distribution) )
           version=$(./distribution/print-api --version)
           archive="print-api-${version}-${{ runner.os }}-${{ env.ARCH }}-ghc-${{ matrix.ghc }}.tar.gz"
-          tar -c -z -v -f "${archive}" -C distribution "${executables[@]}"
+          tar -czvf "${archive}" -C distribution "${executables[@]}"
           echo "PRINTAPI_EXEC_TAR=${archive}" >> $GITHUB_ENV
 
       - name: Upload the executables archive
@@ -126,12 +127,10 @@ jobs:
                 musl-dev ncurses-dev perl pkgconfig \
                 sudo tar upx xz zlib-dev zlib-static
 
-      - name: Checkout the repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Haskell
+      - uses: haskell-actions/setup@v2
         id: setup-haskell
-        uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc }}
           cabal-version: 'latest'
@@ -146,12 +145,11 @@ jobs:
       - name: Freeze
         run: cabal freeze --project-file=cabal.static.project
 
-      - name: Cache
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: ${{ steps.setup-haskell.outputs.cabal-store }}
           key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-${{ hashFiles('**/plan.json') }}
-          restore-keys: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-
+          restore-keys: ${{ runner.os }}-${{ steps.setup.outputs.ghc-version }}-
 
       - name: Build
         run: cabal build --project-file=cabal.static.project
@@ -174,7 +172,7 @@ jobs:
         with:
           report_paths: "report.xml"
 
-      - name: File type of executables
+      - name: File type
         run: file distribution/*
 
       - name: Post-process executables
