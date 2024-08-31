@@ -6,7 +6,7 @@
 confirm() {
     if ${interactive}; then
         echo -n "Continue? [y/N] "
-        while read input; do
+        while read -r input; do
             case "${input}" in
                 'y'|'Y')
                     break
@@ -124,7 +124,7 @@ if ${debug}; then
     set -x
 fi
 
-ghcs=( $(ghcup --offline list --raw-format --tool ghc --show-criteria installed | cut -d ' ' -f 2) )
+readarray -t ghcs < <(ghcup --offline list --raw-format --tool ghc --show-criteria installed | cut -d ' ' -f 2)
 
 info "We are going to install versions of print-api for the following versions of GHC: ${ghcs[*]}"
 confirm
