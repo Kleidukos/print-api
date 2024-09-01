@@ -5,21 +5,22 @@ _(If you want to use this tool as a GitHub Workflow, check out [diff-package-api
 Taken from the GHC CI scripts, this tool prints a human-readable representation of the exposed interface of Haskell modules that you
 can use in CI to ensure that you do not mistakenly introduce a regression.
 
-The tool can be used with the following GHC versions:
+## Installation
 
-* 9.10.1
-* 9.8.2
-* 9.6.6
+Binaries for the following operating systems and GHC are provided:
 
-[Releases](https://github.com/Kleidukos/print-api/releases/latest) provide binaries for the following operating systems:
+| GHC / OS | Ubuntu 22.04 (glibc) | Alpine 3.20 (musl) | macOS 14  |
+|---|---|---|---|
+| 9.10.1 | ✅ | ✅ | ✅ |
+| 9.8.2 | ✅ | ✅ | ✅ |
+| 9.6.6 | ✅ | ✅ | ✅ |
 
-* Linux x86_64 (glibc, dynamic)
-* Linux x86_64 (musl, static)
-* macOS arm64
+### Releases
 
-Pick the one that matches your operating system *and* GHC version.
+* [Pre-releases](https://github.com/Kleidukos/print-api/releases/tag/print-api-head) are provided if you need an urgent fix for a bug;
+* [Official releases](https://github.com/Kleidukos/print-api/releases/latest) are available if you need stability and you don't urgently require the latest features.
 
-If you have the GitHub CLI installed, (something like) the following does work:
+If you have the [GitHub CLI](https://cli.github.com/) installed, (something like) the following does work:
 
 ```
 $ gh release download --repo Kleidukos/print-api --pattern "print-api-*-$(uname -s)-$(uname -m).tar.gz" --output - | tar -x -z -C <INSTALL_DIRECTORY>
@@ -44,8 +45,7 @@ $ cd print-api
 $ cabal install --with-compiler ghc-<GHC_VERSION>
 ```
 
-(There is also an `install-for-ghcup-compilers.sh` script in the `print-api`
-repository that installs `print-api` for GHCs currently installed by GHCup.)
+There is also an `install-for-ghcup-compilers.sh` script in the `print-api` repository that installs `print-api` for GHCs currently installed by GHCup.
 
 Then run the `print-api` binary from within the source tree of your project:
 
