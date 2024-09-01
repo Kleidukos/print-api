@@ -1,6 +1,9 @@
 cabal-version:      2.4
 name:               print-api
-version:            0.1.0.1
+-- For the purpose of release and pre-release versioning, we use the following scheme:
+-- EPOCH.MAJOR.MINOR.PATCH
+-- with the MINOR member being even for releases and odd for pre-releases
+version:            0.1.1.0
 synopsis:           Print the API of a package.
 license:            BSD-3-Clause
 author:             Ben Gamari, Hécate Kleidukos
