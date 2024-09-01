@@ -43,11 +43,14 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
     steps:
+      - name: "Install tools"
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          sudo apt install upx-ucl
+
       - name: Checkout base repo
         uses: actions/checkout@v4
-      - name: "Install tools"
-        run: |
-            .github/workflows/install-tools.sh
+
       - name: Set up Haskell
         id: setup-haskell
         uses: haskell-actions/setup@v2
@@ -74,23 +77,34 @@ jobs:
 
       - name: Install
         run: |
-          bin=$(cabal -v0 --project-file=cabal.release.project list-bin print-api)
           mkdir distribution
-          cp ${bin} distribution/print-api
+          for executable in 'print-api' 'print-api-${{ matrix.ghc }}'; do
+            path=$(cabal -v0 --project-file=cabal.release.project list-bin "print-api:exe:${executable}")
+            cp "${path}" distribution
+          done
+          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: File type
-        run: file distribution/print-api
+        run: file distribution/*
 
-      - name: Package the print-api executable
+      - name: Post-process executables
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          PRINTAPI_EXEC=distribution/print-api
-          .github/workflows/process-binaries.sh
-          DIR=$(dirname $PRINTAPI_EXEC)
-          FILE=$(basename $PRINTAPI_EXEC)
-          PRINTAPI_EXEC_TAR=print-api-head-${{ runner.os }}-${{ matrix.ghc }}-${{ env.ARCH }}.tar.gz
-          tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
-          echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
-      - name: Upload the print-api executable
+          for executable in distribution/*; do
+            strip "${executable}"
+            upx -9 "${executable}"
+          done
+
+      - name: Package the executables
+        shell: bash
+        run: |
+          executables=( $(ls distribution) )
+          version=$(./distribution/print-api --version)
+          archive="print-api-${version}-${{ runner.os }}-${{ env.ARCH }}-ghc-${{ matrix.ghc }}.tar.gz"
+          tar -czvf "${archive}" -C distribution "${executables[@]}"
+          echo "PRINTAPI_EXEC_TAR=${archive}" >> $GITHUB_ENV
+
+      - name: Upload the executables archive
         uses: actions/upload-artifact@v3
         with:
           name: artifact
@@ -142,9 +156,11 @@ jobs:
 
       - name: Install
         run: |
-          bin=$(cabal -v0 --project-file=cabal.static.project list-bin print-api)
           mkdir distribution
-          cp ${bin} distribution/print-api
+          for executable in 'print-api' 'print-api-${{ matrix.ghc }}'; do
+            path=$(cabal -v0 --project-file=cabal.static.project list-bin "print-api:exe:${executable}")
+            cp "${path}" distribution
+          done
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
@@ -157,19 +173,26 @@ jobs:
           report_paths: "report.xml"
 
       - name: File type
-        run: file distribution/print-api
+        run: file distribution/*
 
-      - name: Tar print-api executable
+      - name: Post-process executables
+        if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
-          PRINTAPI_EXEC=distribution/print-api
-          .github/workflows/process-binaries.sh
-          DIR=$(dirname $PRINTAPI_EXEC)
-          FILE=$(basename $PRINTAPI_EXEC)
-          PRINTAPI_EXEC_TAR=print-api-head-${{ runner.os }}-static-${{ matrix.ghc }}-${{ env.ARCH }}.tar.gz
-          tar -czvf $PRINTAPI_EXEC_TAR -C $DIR $FILE
-          echo PRINTAPI_EXEC_TAR=$PRINTAPI_EXEC_TAR >> $GITHUB_ENV
+          for executable in distribution/*; do
+            strip "${executable}"
+            upx -9 "${executable}"
+          done
 
-      - name: Upload print-api executable to workflow artifacts
+      - name: Package the executables
+        shell: bash
+        run: |
+          executables=( $(ls distribution) )
+          version=$(./distribution/print-api --version)
+          archive="print-api-${version}-${{ runner.os }}-${{ env.ARCH }}-static-ghc-${{ matrix.ghc }}.tar.gz"
+          tar -c -z -v -f "${archive}" -C distribution "${executables[@]}"
+          echo "PRINTAPI_EXEC_TAR=${archive}" >> $GITHUB_ENV
+
+      - name: Upload the executables archive
         uses: actions/upload-artifact@v3
         with:
           name: artifact

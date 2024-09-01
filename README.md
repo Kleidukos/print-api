@@ -19,6 +19,12 @@ The tool can be used with the following GHC versions:
 
 Pick the one that matches your operating system *and* GHC version.
 
+If you have the GitHub CLI installed, (something like) the following does work:
+
+```
+$ gh release download --repo Kleidukos/print-api --pattern "print-api-*-$(uname -s)-$(uname -m).tar.gz" --output - | tar -x -z -C <INSTALL_DIRECTORY>
+```
+
 ## Usage
 
 Go in your project and build it with the GHC environment files enabled:
@@ -27,7 +33,21 @@ Go in your project and build it with the GHC environment files enabled:
 $ cabal build --write-ghc-environment-files=always
 ```
 
-Then run the `print-api` binary from within the same directory:
+You need the appropriate `print-api-<GHC_VERSION>` in your `PATH`. That means,
+if you did not obtain the executables from the GitHub Releases as described
+above but build and installed `print-api` yourself, then you need to install it
+for the GHC version you intend to use; For example:
+
+```
+$ git clone https://github.com/Kleidukos/print-api.git
+$ cd print-api
+$ cabal install --with-compiler ghc-<GHC_VERSION>
+```
+
+(There is also an `install-for-ghcup-compilers.sh` script in the `print-api`
+repository that installs `print-api` for GHCs currently installed by GHCup.)
+
+Then run the `print-api` binary from within the source tree of your project:
 
 ```
 $ print-api -p <my-package>

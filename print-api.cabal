@@ -40,6 +40,24 @@ common ghc-options
 common rts-options
   ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
 
+common print-api-common
+  import:           extensions
+  import:           ghc-options
+  import:           rts-options
+  hs-source-dirs:   app/print-api
+
+  -- For some mysterious reason Cabal doesn't like it when there is no `main-is` in the executable section;
+  -- Importing it doesn't work.
+  -- main-is:          Main.hs
+  build-depends:
+    , base
+    , ghc
+    , ghc-paths
+    , optparse-applicative
+    , print-api
+
+  default-language: Haskell2010
+
 library
   import:          extensions
   import:          ghc-options
@@ -63,6 +81,7 @@ library
     PrintApi.CLI.Cmd.Dump
     PrintApi.CLI.Types
     PrintApi.IgnoredDeclarations
+    PrintApi.Utils
 
   build-depends:
     , base
@@ -73,21 +92,53 @@ library
     , ghc-boot
     , ghc-paths
     , optparse-applicative
+    , process
     , text
     , typed-process
 
 executable print-api
-  import:         extensions
-  import:         ghc-options
-  import:         rts-options
-  hs-source-dirs: app
-  main-is:        Main.hs
+  import:           extensions
+  import:           ghc-options
+  import:           rts-options
+  hs-source-dirs:   app/print-api-wrapper
+  main-is:          Main.hs
   build-depends:
     , base
-    , ghc
-    , ghc-paths
+    , bytestring
     , optparse-applicative
     , print-api
+
+  default-language: GHC2021
+
+executable print-api-9.6.6
+  import:  print-api-common
+  main-is: Main.hs
+
+  if impl(ghc ==9.6.6)
+    buildable: True
+
+  else
+    buildable: False
+
+executable print-api-9.8.2
+  import:  print-api-common
+  main-is: Main.hs
+
+  if impl(ghc ==9.8.2)
+    buildable: True
+
+  else
+    buildable: False
+
+executable print-api-9.10.1
+  import:  print-api-common
+  main-is: Main.hs
+
+  if impl(ghc ==9.10.1)
+    buildable: True
+
+  else
+    buildable: False
 
 test-suite print-api-test
   import:         extensions
