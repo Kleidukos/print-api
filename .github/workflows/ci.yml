@@ -12,14 +12,17 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout base repo
+        uses: actions/checkout@v4
+
       - name: Extract the tested GHC versions
         id: set-matrix
-        uses: kleidukos/get-tested@v0.1.7.1
+        uses: kleidukos/get-tested@v0.1.8.0
         with:
           cabal-file: print-api.cabal
           ubuntu-version: 'latest'
           macos-version: 'latest'
-          version: 0.1.7.1
+          version: 0.1.8.0
 
   generate-alpine-matrix:
     name: 'Generate Alpine matrix from cabal'
@@ -27,13 +30,18 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     runs-on: ubuntu-latest
     steps:
+
+      - name: Checkout base repo
+        uses: actions/checkout@v4
+
       - name: Extract the tested GHC versions
         id: set-matrix
-        uses: kleidukos/get-tested@v0.1.7.1
+        uses: kleidukos/get-tested@v0.1.8.0
         with:
           cabal-file: print-api.cabal
-          version: 0.1.7.1
+          version: 0.1.8.0
           ubuntu-version: 'latest'
+          newest: true
 
   builds:
     name: ${{ matrix.ghc }} on ${{ matrix.os }}
