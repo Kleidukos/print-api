@@ -112,18 +112,12 @@ jobs:
       - name: Package the executables
         shell: bash
         run: |
-          shopt -s nullglob
-          declare -a executables
-          for file in distribution/*
-          do
-            executables=("${executables[@]}" "$file")
-          done
           ls distribution
           ARTIFACT_NAME="print-api-head-${{ matrix.os }}-${{ env.ARCH }}-ghc-${{ matrix.ghc }}"
           echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
           ARCHIVE=${ARTIFACT_NAME}.tar.gz
           echo "ARTIFACT_NAME=artifact-${{ matrix.os }}-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
-          tar -czvf "${ARCHIVE}" -C distribution "${executables[@]}"
+          tar -czvf "${ARCHIVE}" -C distribution distribution/*
 
       - name: Upload the executables archive
         uses: actions/upload-artifact@v4
