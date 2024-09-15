@@ -61,7 +61,9 @@ jobs:
         run: |
           ARCHITECTURE=$(uname -m)
           echo "ARCH=$ARCHITECTURE" >> $GITHUB_ENV
-          echo "REPORT_NAME=report-${{ matrix.os }}-ghc-${{ matrix.ghc }}.xml" >> $GITHUB_ENV
+          KERNEL=$(uname -s)
+          echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+          echo "REPORT_NAME=report-$KERNEL-ghc-${{ matrix.ghc }}.xml" >> $GITHUB_ENV
           echo ${{ env.ARCH }}
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
           echo "REPORT_NAME=report-${{ matrix.os }}-ghc-${{ matrix.ghc }}.xml" >> $GITHUB_ENV
@@ -79,14 +81,6 @@ jobs:
       - name: Build
         run: cabal build --project-file=cabal.release.project
 
-      - name: Install
-        run: |
-          mkdir distribution
-          for executable in 'print-api' 'print-api-${{ matrix.ghc }}'; do
-            path=$(cabal -v0 --project-file=cabal.release.project list-bin "print-api:exe:${executable}")
-            cp "${path}" distribution
-          done
-
       - name: Test
         run: |
           cabal test --project-file=cabal.release.project --test-options "--xml=../print-api/${{ env.REPORT_NAME }}" all
@@ -97,6 +91,14 @@ jobs:
         with:
           name: ${{ env.REPORT_NAME }}
           path: ${{ env.REPORT_NAME }}
+
+      - name: Install
+        run: |
+          mkdir distribution
+          for executable in 'print-api' 'print-api-${{ matrix.ghc }}'; do
+            path=$(cabal -v0 --project-file=cabal.release.project list-bin "print-api:exe:${executable}")
+            cp -v "${path}" distribution
+          done
 
       - name: File type
         run: file distribution/*
@@ -112,12 +114,11 @@ jobs:
       - name: Package the executables
         shell: bash
         run: |
-          ls distribution
-          ARTIFACT_NAME="print-api-head-${{ matrix.os }}-${{ env.ARCH }}-ghc-${{ matrix.ghc }}"
+          executables=( $(ls distribution) )
+          ARTIFACT_NAME=print-api-${{ env.KERNEL }}-ghc-${{ matrix.ghc }}
           echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
           ARCHIVE=${ARTIFACT_NAME}.tar.gz
-          echo "ARTIFACT_NAME=artifact-${{ matrix.os }}-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
-          tar -czvf "${ARCHIVE}" -C distribution distribution/*
+          tar -czvf "${ARCHIVE}" -C distribution "${executables[@]}"
 
       - name: Upload the executables archive
         uses: actions/upload-artifact@v4
@@ -154,7 +155,11 @@ jobs:
         run: |
           ARCHITECTURE=$(uname -m)
           echo "ARCH=$ARCHITECTURE" >> $GITHUB_ENV
+          KERNEL=$(uname -s)
+          echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+          echo "REPORT_NAME=report-$KERNEL-ghc-${{ matrix.ghc }}.xml" >> $GITHUB_ENV
           echo ${{ env.ARCH }}
+          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
           cabal configure --enable-tests
 
       - name: Freeze
@@ -178,7 +183,7 @@ jobs:
             cp "${path}" distribution
           done
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
-          echo "REPORT_NAME=report-alpine-3.20-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
+          echo "REPORT_NAME=report-${{ env.KERNEL }}-static-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
 
       - name: Test
         run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/${REPORT_NAME}.xml" all
@@ -204,16 +209,10 @@ jobs:
       - name: Package the executables
         shell: bash
         run: |
-          shopt -s nullglob
-          declare -a executables
-          for file in distribution/*
-          do
-            executables=("${executables[@]}" "$file")
-          done
-          ARTIFACT_NAME="print-api-head-alpine-3.20-${{ env.ARCH }}-ghc-${{ matrix.ghc }}
+          executables=( $(ls distribution) )
+          ARTIFACT_NAME=print-api-${{ env.KERNEL }}-static-ghc-${{ matrix.ghc }}
           echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
           ARCHIVE=${ARTIFACT_NAME}.tar.gz
-          echo "ARTIFACT_NAME=artifact-alpine-3.20-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
           tar -czvf "${ARCHIVE}" -C distribution "${executables[@]}"
 
       - name: Upload the get-tested executable
