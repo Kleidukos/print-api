@@ -61,41 +61,44 @@ jobs:
         run: |
           ARCHITECTURE=$(uname -m)
           echo "ARCH=$ARCHITECTURE" >> $GITHUB_ENV
+          KERNEL=$(uname -s)
+          echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+          echo "REPORT_NAME=report-$KERNEL-ghc-${{ matrix.ghc }}.xml" >> $GITHUB_ENV
           echo ${{ env.ARCH }}
-          cabal configure --enable-tests
+          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
+          echo "REPORT_NAME=report-${{ matrix.os }}-ghc-${{ matrix.ghc }}.xml" >> $GITHUB_ENV
 
       - name: Freeze
         run: cabal freeze --project-file=cabal.release.project
 
       - name: Cache
-        uses: actions/cache@v4.0.2
+        uses: actions/cache@v4
         with:
+          key: ${{ runner.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('**/plan.json') }}
           path: ${{ steps.setup-haskell.outputs.cabal-store }}
-          key: ${{ matrix.os }}-ghc-${{ matrix.ghc }}-${{ hashFiles('**/plan.json') }}
-          restore-keys: ${{ matrix.os }}-ghc-${{ matrix.ghc }}-
+          restore-keys: ${{ runner.os }}-ghc-${{ matrix.ghc }}-
 
       - name: Build
         run: cabal build --project-file=cabal.release.project
 
-      - name: Install
-        run: |
-          mkdir distribution
-          for executable in 'print-api' 'print-api-${{ matrix.ghc }}'; do
-            path=$(cabal -v0 --project-file=cabal.release.project list-bin "print-api:exe:${executable}")
-            cp "${path}" distribution
-          done
-          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
-          echo "REPORT_NAME=report-${{ matrix.os }}-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
-
       - name: Test
-        run: cabal test --project-file=cabal.release.project --test-options "--xml=../print-api/${{ env.REPORT_NAME }}.xml" all
+        run: |
+          cabal test --project-file=cabal.release.project --test-options "--xml=../print-api/${{ env.REPORT_NAME }}" all
 
       - name: Upload the test report
         uses: actions/upload-artifact@v4
         if: success() || failure() # always run even if the previous step fails
         with:
           name: ${{ env.REPORT_NAME }}
-          path: ${{ env.REPORT_NAME }}.xml
+          path: ${{ env.REPORT_NAME }}
+
+      - name: Install
+        run: |
+          mkdir distribution
+          for executable in 'print-api' 'print-api-${{ matrix.ghc }}'; do
+            path=$(cabal -v0 --project-file=cabal.release.project list-bin "print-api:exe:${executable}")
+            cp -v "${path}" distribution
+          done
 
       - name: File type
         run: file distribution/*
@@ -112,17 +115,16 @@ jobs:
         shell: bash
         run: |
           executables=( $(ls distribution) )
-          version=$(./distribution/print-api --version)
-          archive="print-api-${version}-${{ matrix.os }}-${{ env.ARCH }}-ghc-${{ matrix.ghc }}.tar.gz"
-          tar -czvf "${archive}" -C distribution "${executables[@]}"
-          echo "PRINTAPI_EXEC_TAR=${archive}" >> $GITHUB_ENV
-          echo "ARTIFACT_NAME=artifact-${{ matrix.os }}-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
+          ARTIFACT_NAME=print-api-${{ env.KERNEL }}-ghc-${{ matrix.ghc }}
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          ARCHIVE=${ARTIFACT_NAME}.tar.gz
+          tar -czvf "${ARCHIVE}" -C distribution "${executables[@]}"
 
       - name: Upload the executables archive
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ env.PRINTAPI_EXEC_TAR }}
+          path: ${{ env.ARTIFACT_NAME }}.tar.gz
 
   build-alpine:
     name: ${{ matrix.ghc }} on alpine-3.20
@@ -153,7 +155,11 @@ jobs:
         run: |
           ARCHITECTURE=$(uname -m)
           echo "ARCH=$ARCHITECTURE" >> $GITHUB_ENV
+          KERNEL=$(uname -s)
+          echo "KERNEL=$KERNEL" >> $GITHUB_ENV
+          echo "REPORT_NAME=report-$KERNEL-ghc-${{ matrix.ghc }}.xml" >> $GITHUB_ENV
           echo ${{ env.ARCH }}
+          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
           cabal configure --enable-tests
 
       - name: Freeze
@@ -177,7 +183,7 @@ jobs:
             cp "${path}" distribution
           done
           echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
-          echo "REPORT_NAME=report-alpine-3.20-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
+          echo "REPORT_NAME=report-${{ env.KERNEL }}-static-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
 
       - name: Test
         run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/${REPORT_NAME}.xml" all
@@ -185,7 +191,7 @@ jobs:
       - name: Upload the test report
         uses: actions/upload-artifact@v4
         if: success() || failure() # always run even if the previous step fails
-        with: 
+        with:
           name: ${{ env.REPORT_NAME }}
           path: ${{ env.REPORT_NAME }}.xml
 
@@ -204,21 +210,21 @@ jobs:
         shell: bash
         run: |
           executables=( $(ls distribution) )
-          version=$(./distribution/print-api --version)
-          archive="print-api-${version}-alpine-3.20-${{ env.ARCH }}-static-ghc-${{ matrix.ghc }}.tar.gz"
-          tar -c -z -v -f "${archive}" -C distribution "${executables[@]}"
-          echo "PRINTAPI_EXEC_TAR=${archive}" >> $GITHUB_ENV
-          echo "ARTIFACT_NAME=artifact-alpine-3.20-ghc-${{ matrix.ghc }}" >> $GITHUB_ENV
+          ARTIFACT_NAME=print-api-${{ env.KERNEL }}-static-ghc-${{ matrix.ghc }}
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          ARCHIVE=${ARTIFACT_NAME}.tar.gz
+          tar -czvf "${ARCHIVE}" -C distribution "${executables[@]}"
 
-      - name: Upload the executables archive
+      - name: Upload the get-tested executable
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ env.PRINTAPI_EXEC_TAR }}
+          path: ${{ env.ARTIFACT_NAME }}.tar.gz
 
   collect-test-results:
     name: Collect test results
     runs-on: ubuntu-latest
+    if: ${{ always() }}
     needs: ['builds', 'build-alpine']
     steps:
       - name: Install junitparser
@@ -229,12 +235,11 @@ jobs:
         with:
           pattern: report-*
           merge-multiple: true
-          workflow: ${{ github.event.workflow.id }}
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GH_PAT }} # token with actions:read permissions on target repo
+
       - name: Merge XML files
         run: |
           junitparser merge --glob *.xml final-report.xml
+
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v4
         with:
@@ -244,12 +249,15 @@ jobs:
   prerelease-head:
     name: Create a GitHub prerelease with the binary artifacts
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     needs: ['builds', 'build-alpine']
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/download-artifact@v4
       with:
-        pattern: artifact-*
+        pattern: print-api-*
         merge-multiple: true
         path: ./out
 
