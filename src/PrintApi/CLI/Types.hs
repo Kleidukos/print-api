@@ -40,7 +40,7 @@ parseOptions =
       (long "package-name" <> short 'p' <> metavar "PACKAGE NAME" <> help "Name of the package")
     <*> optional
       (option osPathOption (long "modules-ignore-list" <> metavar "FILE" <> help "Read the file for a list of ignored modules (one per line)"))
-    <*> switch (long "public-only")
+    <*> switch (long "public-only" <> help "Process modules with `Visibility: Public` set in their Haddock attributes.")
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc =
