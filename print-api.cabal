@@ -1,4 +1,4 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               print-api
 
 -- For the purpose of release and pre-release versioning, we use the following scheme:
@@ -13,9 +13,9 @@ copyright:          © 2023 Ben Gamari, 2024 Hécate Kleidukos
 extra-source-files:
   compat/9.10.1/GHC/Compat.hs
   compat/9.6.6/GHC/Compat.hs
-  compat/9.8.2/GHC/Compat.hs
+  compat/9.8.4/GHC/Compat.hs
 
-tested-with:        GHC ==9.6.6 || ==9.8.2 || ==9.10.1
+tested-with:        GHC ==9.6.6 || ==9.8.4 || ==9.10.1
 
 common extensions
   default-extensions:
@@ -72,8 +72,8 @@ library
   if impl(ghc ==9.10.1)
     hs-source-dirs: compat/9.10.1
 
-  if impl(ghc ==9.8.2)
-    hs-source-dirs: compat/9.8.2
+  if impl(ghc ==9.8.4)
+    hs-source-dirs: compat/9.8.4
 
   if impl(ghc ==9.6.6)
     hs-source-dirs: compat/9.6.6
@@ -128,11 +128,11 @@ executable print-api-9.6.6
   else
     buildable: False
 
-executable print-api-9.8.2
+executable print-api-9.8.4
   import:  print-api-common
   main-is: Main.hs
 
-  if impl(ghc ==9.8.2)
+  if impl(ghc ==9.8.4)
     buildable: True
 
   else
