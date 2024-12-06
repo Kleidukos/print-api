@@ -179,13 +179,16 @@ extractModuleDeclarations moduleName mod_info = do
   let contents =
         vcat $
           [ pprTyThing ss thing $$ extras
-          | thing <- things
-          , let ss = mkShowSub mod_info
-          , let extras = case thing of
-                  ATyCon tycon
-                    | Just cls <- tyConClass_maybe tycon ->
-                        nest 2 (text "{-# MINIMAL" <+> ppr (classMinimalDef cls) <+> text "#-}")
-                  _ -> empty
+          | let ss = mkShowSub mod_info
+          , thing <- things
+          , let extras =
+                  case thing of
+                    ATyCon tycon
+                      | Just cls <- tyConClass_maybe tycon ->
+                          nest
+                            2
+                            (text "{-# MINIMAL" <+> ppr (classMinimalDef cls) <+> text "#-}")
+                    _ -> empty
           ]
   pure $ withUserStyle name_ppr_ctx AllTheWay $ hang (modHeader moduleName) 2 contents <> text ""
 
