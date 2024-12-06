@@ -93,8 +93,6 @@ jobs:
         if: success() || failure() # always run even if the previous step fails
         with:
           report_paths: "report.xml"
-          cp ${bin} distribution/print-api
-          echo "$GITHUB_WORKSPACE/distribution" >> "$GITHUB_PATH"
 
       - name: Test
         run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/report.xml" all
