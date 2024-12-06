@@ -4,6 +4,11 @@ tests: True
 
 write-ghc-environment-files: always
 
+package print-api
+  ghc-options: -haddock
+
+documentation: True
+
 allow-newer:
     tasty-test-reporter:mtl
   , tasty-test-reporter:ansi-terminal

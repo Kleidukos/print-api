@@ -1,52 +1,105 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use mapMaybe" #-}
+{-# HLINT ignore "Functor law" #-}
+
+-- |
+--  Module      : PrintApi.CLI.Cmd.Dump
+--  Copyright   : © Hécate, 2024
+--  License     : MIT
+--  Maintainer  : hecate@glitchbra.in
+--  Visibility  : Public
+--
+--  The processing of package information
 module PrintApi.CLI.Cmd.Dump where
 
 import Control.Monad.IO.Class
-import Data.Function (on)
+import Data.Function (on, (&))
 import Data.List qualified as List
 import Data.List.Extra qualified as List
+import Data.Maybe
+import Data.Maybe qualified as Maybe
+import Data.Text (Text)
+import Data.Text qualified as Text
+import Data.Text.Encoding qualified as TE
 import GHC
-import GHC.Compat
+  ( ModuleInfo
+  , getModuleInfo
+  , getNamePprCtx
+  , lookupName
+  , lookupQualifiedModule
+  , mkNamePprCtxForModule
+  , modInfoExports
+  , modInfoIface
+  , parseDynamicFlags
+  , runGhc
+  , setProgramDynFlags
+  )
+import GHC.Compat as Compat
 import GHC.Core.Class (classMinimalDef)
-import GHC.Core.InstEnv (instEnvElts, instanceHead)
+import GHC.Core.InstEnv (ClsInst, instEnvElts, instanceHead)
 import GHC.Data.FastString (fsLit)
 import GHC.Driver.Env (hscEPS, hsc_units)
+import GHC.Driver.Monad (Ghc, getSession, getSessionDynFlags)
 import GHC.Driver.Ppr (showSDocForUser)
-import GHC.Types.Name (nameOccName, stableNameCmp)
-import GHC.Types.TyThing (tyThingParent_maybe)
+import GHC.Hs.Doc (Docs (..), WithHsDocIdentifiers (..))
+import GHC.Hs.DocString (HsDocStringChunk (..), docStringChunks)
+import GHC.Plugins (ModIface_ (mi_docs), PkgQual (..), tyConClass_maybe)
+import GHC.Types.Name (NamedThing (..), nameOccName, stableNameCmp)
+import GHC.Types.SrcLoc (Located, noLoc, unLoc)
+import GHC.Types.TyThing (TyThing (..), tyThingParent_maybe)
 import GHC.Types.TyThing.Ppr (pprTyThing)
 import GHC.Unit.External (eps_inst_env)
 import GHC.Unit.Info (PackageName (..), UnitInfo, unitExposedModules, unitId)
+import GHC.Unit.Module (ModuleName, mkModuleName)
 import GHC.Unit.State (lookupPackageName, lookupUnitId)
 import GHC.Unit.Types (UnitId)
+import GHC.Utils.Logger (HasLogger (..))
 import GHC.Utils.Outputable
+  ( Depth (..)
+  , IsDoc (..)
+  , IsLine (..)
+  , IsOutput (..)
+  , Outputable (..)
+  , SDoc
+  , hang
+  , nest
+  , withUserStyle
+  )
 import System.IO qualified as System
-import System.OsPath (OsPath)
 import System.OsPath qualified as OsPath
 import Prelude hiding ((<>))
 
+import Data.Functor ((<&>))
 import PrintApi.IgnoredDeclarations
+import System.OsPath (OsPath)
 
 run
   :: FilePath
   -> Maybe OsPath
+  -> Bool
   -> String
   -> IO ()
-run root mModuleIgnoreList packageName = do
-  userIgnoredModules <- case mModuleIgnoreList of
-    Nothing -> pure []
+run root mIgnoreList usePublicOnly packageName = do
+  case mIgnoreList of
+    Nothing -> do
+      rendered <- computePackageAPI usePublicOnly root [] packageName
+      liftIO $ putStrLn rendered
     Just ignoreListPath -> do
-      ignoreListFilePath <- liftIO $ OsPath.decodeFS ignoreListPath
-      modules <- lines <$> liftIO (System.readFile ignoreListFilePath)
-      pure $ List.map mkModuleName modules
-  rendered <- computePackageAPI root userIgnoredModules packageName
-  liftIO $ putStrLn rendered
+      userIgnoredModules <- do
+        ignoreListFilePath <- liftIO $ OsPath.decodeFS ignoreListPath
+        modules <- lines <$> liftIO (System.readFile ignoreListFilePath)
+        pure $ List.map mkModuleName modules
+      rendered <- computePackageAPI usePublicOnly root userIgnoredModules packageName
+      liftIO $ putStrLn rendered
 
 computePackageAPI
-  :: FilePath
+  :: Bool
+  -> FilePath
   -> [ModuleName]
   -> String
   -> IO String
-computePackageAPI root userIgnoredModules packageName = runGhc (Just root) $ do
+computePackageAPI usePublicOnly root userIgnoredModules packageName = runGhc (Just root) $ do
   let args :: [Located String] =
         map
           noLoc
@@ -64,71 +117,77 @@ computePackageAPI root userIgnoredModules packageName = runGhc (Just root) $ do
 
   _ <- setProgramDynFlags dflags
   unit_state <- hsc_units <$> getSession
-  unit_id <- case lookupPackageName unit_state (PackageName $ fsLit packageName) of
-    Just unit_id -> pure unit_id
+  unitId <- case lookupPackageName unit_state (PackageName $ fsLit packageName) of
+    Just unitId -> pure unitId
     Nothing -> fail "failed to find package"
-  unit_info <- case lookupUnitId unit_state unit_id of
-    Just unit_info -> pure unit_info
+  unitInfo <- case lookupUnitId unit_state unitId of
+    Just unitInfo -> pure unitInfo
     Nothing -> fail "unknown package"
 
-  decls_doc <- reportUnitDecls userIgnoredModules unit_info
+  decls_doc <- reportUnitDecls usePublicOnly userIgnoredModules unitInfo
   insts_doc <- reportInstances
 
   name_ppr_ctx <- GHC.getNamePprCtx
   pure $ List.trim $ showSDocForUser dflags unit_state name_ppr_ctx (vcat [decls_doc, insts_doc])
 
-ignoredTyThing :: TyThing -> Bool
-ignoredTyThing _ = False
-
-reportUnitDecls :: [ModuleName] -> UnitInfo -> Ghc SDoc
-reportUnitDecls userIgnoredModules unit_info = do
+reportUnitDecls :: Bool -> [ModuleName] -> UnitInfo -> Ghc SDoc
+reportUnitDecls usePublicOnly userIgnoredModules unitInfo = do
   let exposed :: [ModuleName]
-      exposed = map fst (unitExposedModules unit_info)
-  vcat <$> mapM (reportModuleDecls userIgnoredModules $ unitId unit_info) exposed
+      exposed = map fst (unitExposedModules unitInfo)
+  vcat <$> mapM (reportModuleDecls usePublicOnly userIgnoredModules $ unitId unitInfo) exposed
 
-reportModuleDecls :: [ModuleName] -> UnitId -> ModuleName -> Ghc SDoc
-reportModuleDecls userIgnoredModules unit_id modl_nm
-  | modl_nm `elem` (userIgnoredModules ++ ignoredModules) = do
-      pure $ vcat [mod_header, text "-- ignored", text ""]
+reportModuleDecls :: Bool -> [ModuleName] -> UnitId -> ModuleName -> Ghc SDoc
+reportModuleDecls usePublicOnly userIgnoredModules unitId moduleName
+  | moduleName `elem` (userIgnoredModules ++ ignoredModules) = do
+      pure $ vcat [modHeader moduleName, text "-- ignored", text ""]
   | otherwise = do
-      modl <- GHC.lookupQualifiedModule (OtherPkg unit_id) modl_nm
+      modl <- GHC.lookupQualifiedModule (OtherPkg unitId) moduleName
       mb_mod_info <- GHC.getModuleInfo modl
       mod_info <- case mb_mod_info of
         Nothing -> fail "Failed to find module"
         Just mod_info -> pure mod_info
+      let mDocs =
+            mod_info
+              & modInfoIface
+              & Maybe.fromJust
+              & mi_docs
+      case mDocs of
+        Nothing -> pure empty
+        Just docs -> do
+          if usePublicOnly
+            then
+              if isVisible docs
+                then extractModuleDeclarations moduleName mod_info
+                else pure empty
+            else extractModuleDeclarations moduleName mod_info
 
-      Just name_ppr_ctx <- mkNamePprCtxForModule mod_info
-      let names = GHC.modInfoExports mod_info
-      let sorted_names = List.sortBy (compare `on` nameOccName) names
-      things <- mapM GHC.lookupName sorted_names
-      let contents =
-            vcat $
-              [ pprTyThing ss thing $$ extras
-              | Just thing <- things
-              , case tyThingParent_maybe thing of
-                  Just parent
-                    | isExported mod_info (getOccName parent) -> False
-                  _ -> True
-              , not $ ignoredTyThing thing
-              , let ss = mkShowSub mod_info
-              , let extras = case thing of
-                      ATyCon tycon
-                        | Just cls <- tyConClass_maybe tycon ->
-                            nest 2 (text "{-# MINIMAL" <+> ppr (classMinimalDef cls) <+> text "#-}")
-                      _ -> empty
-              ]
-
-      pure $
-        withUserStyle name_ppr_ctx AllTheWay $
-          hang mod_header 2 contents
-            <> text ""
-  where
-    mod_header =
-      vcat
-        [ text ""
-        , text "module" <+> ppr modl_nm <+> text "where"
-        , text ""
-        ]
+extractModuleDeclarations :: ModuleName -> ModuleInfo -> Ghc SDoc
+extractModuleDeclarations moduleName mod_info = do
+  Just name_ppr_ctx <- mkNamePprCtxForModule mod_info
+  let names = modInfoExports mod_info
+  let sorted_names = List.sortBy (compare `on` nameOccName) names
+  things <-
+    sorted_names
+      & mapM lookupName
+      <&> catMaybes
+      <&> filter
+        ( \e -> case tyThingParent_maybe e of
+            Just parent
+              | isExported mod_info (getOccName parent) -> False
+            _ -> True
+        )
+  let contents =
+        vcat $
+          [ pprTyThing ss thing $$ extras
+          | thing <- things
+          , let ss = mkShowSub mod_info
+          , let extras = case thing of
+                  ATyCon tycon
+                    | Just cls <- tyConClass_maybe tycon ->
+                        nest 2 (text "{-# MINIMAL" <+> ppr (classMinimalDef cls) <+> text "#-}")
+                  _ -> empty
+          ]
+  pure $ withUserStyle name_ppr_ctx AllTheWay $ hang (modHeader moduleName) 2 contents <> text ""
 
 reportInstances :: Ghc SDoc
 reportInstances = do
@@ -154,3 +213,36 @@ compareInstances inst1 inst2 =
   where
     (_, cls1, _tys1) = instanceHead inst1
     (_, cls2, _tys2) = instanceHead inst2
+
+modHeader :: ModuleName -> SDoc
+modHeader moduleName =
+  vcat
+    [ text ""
+    , text "module" <+> ppr moduleName <+> text "where"
+    , text ""
+    ]
+
+isVisible :: Docs -> Bool
+isVisible moduleDocs =
+  let mModuleHeader = moduleDocs.docs_mod_hdr
+   in case mModuleHeader of
+        Nothing -> False
+        Just hsDoc ->
+          let chunks = unLoc <$> docStringChunks hsDoc.hsDocString
+              fields' = fmap (\(HsDocStringChunk bs) -> TE.decodeUtf8 bs) chunks
+              fields =
+                fields'
+                  & filter (not . Text.null)
+                  & fmap parseField
+                  & Maybe.catMaybes
+           in List.elem ("visibility", "public") fields
+
+parseField :: Text -> Maybe (Text, Text)
+parseField source =
+  let pairs = source & Text.splitOn ":"
+   in case pairs of
+        (x : y : _) -> Just (transformField x, transformField y)
+        _ -> Nothing
+
+transformField :: Text -> Text
+transformField = Text.toLower . Text.strip

@@ -1,28 +1,36 @@
-{-# LANGUAGE CPP #-}
-
+-- |
+--  Module      : PrintApi.CLI.Types
+--  Copyright   : © Hécate, 2024
+--  License     : MIT
+--  Maintainer  : hecate@glitchbra.in
+--  Visibility  : Public
+--
+--  The option parsing for the CLI
 module PrintApi.CLI.Types
   ( Options (..)
+  , RunMode (..)
   , parseOptions
-  , runOptions
   , withInfo
   ) where
 
-import Data.ByteString.Lazy.Char8 qualified as ByteString
-import Data.List.Extra qualified as List
 import Data.Version (showVersion)
 import Options.Applicative
 import System.OsPath (OsPath)
 import System.OsPath qualified as OsPath
 
 import Paths_print_api qualified
-import PrintApi.CLI.Cmd.Dump (run)
-import PrintApi.Utils
 
 data Options = Options
   { packageName :: String
-  , moduleIgnoreList :: Maybe OsPath
+  , ignoreList :: Maybe OsPath
+  , haddockMetadata :: Bool
   }
-  deriving stock (Show, Eq)
+  deriving stock (Show, Ord, Eq)
+
+data RunMode
+  = IgnoreList OsPath
+  | HaddockMetadata
+  deriving stock (Show, Ord, Eq)
 
 parseOptions :: Parser Options
 parseOptions =
@@ -32,13 +40,7 @@ parseOptions =
       (long "package-name" <> short 'p' <> metavar "PACKAGE NAME" <> help "Name of the package")
     <*> optional
       (option osPathOption (long "modules-ignore-list" <> metavar "FILE" <> help "Read the file for a list of ignored modules (one per line)"))
-
-runOptions
-  :: Options
-  -> IO ()
-runOptions (Options packageName mModuleIgnoreList) = do
-  stdOut <- readCabalizedProcess (Just TOOL_VERSION_ghc) "ghc" ["--print-libdir"]
-  run (List.trimEnd $ ByteString.unpack stdOut) mModuleIgnoreList packageName
+    <*> switch (long "public-only")
 
 withInfo :: Parser a -> String -> ParserInfo a
 withInfo opts desc =

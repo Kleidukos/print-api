@@ -48,7 +48,7 @@ generateVectorAPIWithIgnoreList = do
   ignoreListFilePath <- liftIO $ OsPath.decodeUtf ignoreListPath
   modules <- lines <$> liftIO (System.readFile ignoreListFilePath)
   let ignoredModules = List.map mkModuleName modules
-  actualAPI <- liftIO $ Dump.computePackageAPI (List.trimEnd $ C8.unpack stdOut) ignoredModules "vector"
+  actualAPI <- liftIO $ Dump.computePackageAPI False (List.trimEnd $ C8.unpack stdOut) ignoredModules "vector"
   actualApiPath <- liftIO $ Directory.makeAbsolute "../print-api/test/golden/vector-actual-api.txt"
   liftIO $ System.writeFile actualApiPath actualAPI
   liftIO $ ByteString.readFile actualApiPath

@@ -3,7 +3,7 @@ module GHC.Compat where
 
 import GHC (ModuleInfo)
 import GHC.Iface.Syntax (AltPpr (..), ShowForAllFlag (..), ShowHowMuch (..), ShowSub (..))
-import PrintApi.IgnoredDeclarations
+import PrintApi.IgnoredDeclarations ()
 
 mkShowSub :: ModuleInfo -> ShowSub
 mkShowSub _ =
