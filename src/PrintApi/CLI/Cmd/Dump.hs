@@ -11,7 +11,10 @@
 --  Visibility  : Public
 --
 --  The processing of package information
-module PrintApi.CLI.Cmd.Dump where
+module PrintApi.CLI.Cmd.Dump
+    ( run
+    , computePackageAPI
+    ) where
 
 import Control.Monad.IO.Class
 import Data.Function (on, (&))
@@ -23,14 +26,15 @@ import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Text.Encoding qualified as TE
 import GHC
-  ( ModuleInfo
+  ( Module
+  , ModuleInfo
   , getModuleInfo
   , getNamePprCtx
   , lookupName
   , lookupQualifiedModule
-  , mkNamePprCtxForModule
   , modInfoExports
   , modInfoIface
+  , moduleName
   , parseDynamicFlags
   , runGhc
   , setProgramDynFlags
@@ -157,13 +161,13 @@ reportModuleDecls usePublicOnly userIgnoredModules unitId moduleName
           if usePublicOnly
             then
               if isVisible docs
-                then extractModuleDeclarations moduleName mod_info
+                then extractModuleDeclarations modl mod_info
                 else pure empty
-            else extractModuleDeclarations moduleName mod_info
+            else extractModuleDeclarations modl mod_info
 
-extractModuleDeclarations :: ModuleName -> ModuleInfo -> Ghc SDoc
-extractModuleDeclarations moduleName mod_info = do
-  Just name_ppr_ctx <- mkNamePprCtxForModule mod_info
+extractModuleDeclarations :: Module -> ModuleInfo -> Ghc SDoc
+extractModuleDeclarations modl mod_info = do
+  name_ppr_ctx <- Compat.mkNamePprCtxForModule modl mod_info
   let names = modInfoExports mod_info
   let sorted_names = List.sortBy (compare `on` nameOccName) names
   things <-
@@ -190,7 +194,7 @@ extractModuleDeclarations moduleName mod_info = do
                             (text "{-# MINIMAL" <+> ppr (classMinimalDef cls) <+> text "#-}")
                     _ -> empty
           ]
-  pure $ withUserStyle name_ppr_ctx AllTheWay $ hang (modHeader moduleName) 2 contents <> text ""
+  pure $ withUserStyle name_ppr_ctx AllTheWay $ hang (modHeader (moduleName modl)) 2 contents <> text ""
 
 reportInstances :: Ghc SDoc
 reportInstances = do
