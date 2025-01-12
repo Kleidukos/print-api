@@ -12,9 +12,9 @@
 --
 --  The processing of package information
 module PrintApi.CLI.Cmd.Dump
-    ( run
-    , computePackageAPI
-    ) where
+  ( run
+  , computePackageAPI
+  ) where
 
 import Control.Monad.IO.Class
 import Data.Function (on, (&))
