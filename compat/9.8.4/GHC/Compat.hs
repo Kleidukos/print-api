@@ -1,9 +1,16 @@
--- GHC 9.10.1 Compatibility
-module GHC.Compat where
+-- GHC 9.8.4 compatibility
+module GHC.Compat
+  ( mkNamePprCtxForModule
+  , mkShowSub
+  ) where
 
-import GHC (ModuleInfo)
+import Data.Maybe (fromJust)
+import GHC (Ghc, Module, ModuleInfo, NamePprCtx)
+import GHC qualified
 import GHC.Iface.Syntax (AltPpr (..), ShowForAllFlag (..), ShowHowMuch (..), ShowSub (..))
-import PrintApi.IgnoredDeclarations ()
+
+mkNamePprCtxForModule :: Module -> ModuleInfo -> Ghc NamePprCtx
+mkNamePprCtxForModule _ mod_info = fromJust <$> GHC.mkNamePprCtxForModule mod_info
 
 mkShowSub :: ModuleInfo -> ShowSub
 mkShowSub _ =
