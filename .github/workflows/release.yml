@@ -236,7 +236,7 @@ jobs:
     needs: ['tests', 'build-alpine']
 
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v5
       with:
         name: artifact
         path: ./artifacts
