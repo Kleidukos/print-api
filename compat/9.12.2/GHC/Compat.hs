@@ -1,4 +1,4 @@
--- GHC 9.12.1 compatibility
+-- GHC 9.12.2 compatibility
 module GHC.Compat
   ( GHC.mkNamePprCtxForModule
   , mkShowSub
