@@ -11,6 +11,7 @@ Binaries for the following operating systems and GHC are provided:
 
 | GHC / OS | Ubuntu 22.04 (glibc) | Alpine 3.20 (musl) | macOS 14  |
 |---|---|---|---|
+| 9.12.2 | ✅ | ✅ | ✅ |
 | 9.10.1 | ✅ | ✅ | ✅ |
 | 9.8.4 | ✅ | ✅ | ✅ |
 | 9.6.6 | ✅ | ✅ | ✅ |
