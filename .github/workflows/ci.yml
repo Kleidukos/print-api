@@ -87,7 +87,7 @@ jobs:
           cabal test --project-file=cabal.release.project --test-options "--xml=../print-api/${{ env.REPORT_NAME }}" all
 
       - name: Upload the test report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: success() || failure() # always run even if the previous step fails
         with:
           name: ${{ env.REPORT_NAME }}
@@ -122,7 +122,7 @@ jobs:
           tar -czvf "${ARCHIVE}" -C distribution "${executables[@]}"
 
       - name: Upload the executables archive
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ${{ env.ARTIFACT_NAME }}.tar.gz
@@ -191,7 +191,7 @@ jobs:
         run: cabal test --project-file=cabal.static.project --test-options "--xml=../print-api/${REPORT_NAME}.xml" all
 
       - name: Upload the test report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: success() || failure() # always run even if the previous step fails
         with:
           name: ${{ env.REPORT_NAME }}
@@ -218,7 +218,7 @@ jobs:
           tar -czvf "${ARCHIVE}" -C distribution "${executables[@]}"
 
       - name: Upload the get-tested executable
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ${{ env.ARTIFACT_NAME }}.tar.gz
