@@ -17,7 +17,7 @@ module PrintApi.CLI.Cmd.Dump
   ) where
 
 import Control.Monad.IO.Class
-import Data.Function (on, (&))
+import Data.Function ((&))
 import Data.List qualified as List
 import Data.List.Extra qualified as List
 import Data.Maybe
@@ -169,7 +169,10 @@ extractModuleDeclarations :: Module -> ModuleInfo -> Ghc SDoc
 extractModuleDeclarations modl mod_info = do
   name_ppr_ctx <- Compat.mkNamePprCtxForModule modl mod_info
   let names = modInfoExports mod_info
-  let sorted_names = List.sortBy (compare `on` nameOccName) names
+  -- A name may appear several times in the export list (e.g. a pattern synonym
+  -- exported both standalone and bundled with its type), which would otherwise
+  -- render the same declaration twice. See issue #44.
+  let sorted_names = List.sortOn nameOccName $ List.nubOrdBy stableNameCmp names
   things <-
     sorted_names
       & mapM lookupName

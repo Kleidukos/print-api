@@ -1,4 +1,4 @@
--- GHC 9.8.4 compatibility
+-- GHC 9.10.3 compatibility
 module GHC.Compat
   ( mkNamePprCtxForModule
   , mkShowSub
@@ -9,12 +9,14 @@ import GHC (Ghc, Module, ModuleInfo, NamePprCtx)
 import GHC qualified
 import GHC.Iface.Syntax (AltPpr (..), ShowForAllFlag (..), ShowHowMuch (..), ShowSub (..))
 
+import PrintApi.IgnoredDeclarations
+
 mkNamePprCtxForModule :: Module -> ModuleInfo -> Ghc NamePprCtx
 mkNamePprCtxForModule _ mod_info = fromJust <$> GHC.mkNamePprCtxForModule mod_info
 
 mkShowSub :: ModuleInfo -> ShowSub
-mkShowSub _ =
-  let ss_how_much = ShowSome [] (AltPpr Nothing)
+mkShowSub mod_info =
+  let ss_how_much = ShowSome (Just (showOcc mod_info)) (AltPpr Nothing)
    in ShowSub
         { ss_how_much = ss_how_much
         , ss_forall = ShowForAllMust

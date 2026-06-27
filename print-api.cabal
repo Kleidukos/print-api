@@ -11,12 +11,11 @@ author:             Ben Gamari, Hécate Kleidukos
 maintainer:         hecate+github@glitchbra.in
 copyright:          © 2023 Ben Gamari, 2024 Hécate Kleidukos
 extra-source-files:
-  compat/9.10.1/GHC/Compat.hs
+  compat/9.10.3/GHC/Compat.hs
   compat/9.12.2/GHC/Compat.hs
-  compat/9.6.6/GHC/Compat.hs
-  compat/9.8.4/GHC/Compat.hs
+  compat/9.14.1/GHC/Compat.hs
 
-tested-with:        GHC ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.2
+tested-with:        GHC ==9.10.3 || ==9.12.2 || ==9.14.1
 
 common extensions
   default-extensions:
@@ -70,17 +69,14 @@ library
   import:          ghc-options
   hs-source-dirs:  src
 
-  if impl(ghc ==9.6.6)
-    hs-source-dirs: compat/9.6.6
-
-  if impl(ghc ==9.8.4)
-    hs-source-dirs: compat/9.8.4
-
-  if impl(ghc ==9.10.1)
-    hs-source-dirs: compat/9.10.1
+  if impl(ghc ==9.10.3)
+    hs-source-dirs: compat/9.10.3
 
   if impl(ghc ==9.12.2)
     hs-source-dirs: compat/9.12.2
+
+  if impl(ghc ==9.14.1)
+    hs-source-dirs: compat/9.14.1
 
   other-modules:   Paths_print_api
   autogen-modules: Paths_print_api
@@ -122,31 +118,11 @@ executable print-api
 
   default-language: GHC2021
 
-executable print-api-9.6.6
+executable print-api-9.10.3
   import:  print-api-common
   main-is: Main.hs
 
-  if impl(ghc ==9.6.6)
-    buildable: True
-
-  else
-    buildable: False
-
-executable print-api-9.8.4
-  import:  print-api-common
-  main-is: Main.hs
-
-  if impl(ghc ==9.8.4)
-    buildable: True
-
-  else
-    buildable: False
-
-executable print-api-9.10.1
-  import:  print-api-common
-  main-is: Main.hs
-
-  if impl(ghc ==9.10.1)
+  if impl(ghc ==9.10.3)
     buildable: True
 
   else
@@ -162,6 +138,16 @@ executable print-api-9.12.2
   else
     buildable: False
 
+executable print-api-9.14.1
+  import:  print-api-common
+  main-is: Main.hs
+
+  if impl(ghc ==9.14.1)
+    buildable: True
+
+  else
+    buildable: False
+
 test-suite print-api-test
   import:         extensions
   import:         ghc-options
@@ -170,6 +156,7 @@ test-suite print-api-test
   hs-source-dirs: test
   main-is:        Main.hs
   other-modules:
+    DuplicateExports
     IgnoreList
     Utils
 
