@@ -25,12 +25,12 @@ data Options = Options
   , ignoreList :: Maybe OsPath
   , haddockMetadata :: Bool
   }
-  deriving stock (Show, Ord, Eq)
+  deriving stock (Eq, Ord, Show)
 
 data RunMode
   = IgnoreList OsPath
   | HaddockMetadata
-  deriving stock (Show, Ord, Eq)
+  deriving stock (Eq, Ord, Show)
 
 parseOptions :: Parser Options
 parseOptions =

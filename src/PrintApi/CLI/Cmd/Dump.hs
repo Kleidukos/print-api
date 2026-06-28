@@ -18,6 +18,7 @@ module PrintApi.CLI.Cmd.Dump
 
 import Control.Monad.IO.Class
 import Data.Function ((&))
+import Data.Functor ((<&>))
 import Data.List qualified as List
 import Data.List.Extra qualified as List
 import Data.Maybe
@@ -71,12 +72,11 @@ import GHC.Utils.Outputable
   , withUserStyle
   )
 import System.IO qualified as System
+import System.OsPath (OsPath)
 import System.OsPath qualified as OsPath
 import Prelude hiding ((<>))
 
-import Data.Functor ((<&>))
 import PrintApi.IgnoredDeclarations
-import System.OsPath (OsPath)
 
 run
   :: FilePath

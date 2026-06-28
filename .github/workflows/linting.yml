@@ -13,6 +13,8 @@ jobs:
 
     - uses: fourmolu/fourmolu-action@v13
       with:
+        extra-args: -o -XImportQualifiedPost
+        verion: 0.20.0.0
         pattern: |
           app/**/*.hs
           src/**/*.hs
