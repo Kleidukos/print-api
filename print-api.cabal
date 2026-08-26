@@ -1,22 +1,20 @@
-cabal-version:      3.0
-name:               print-api
-
+cabal-version: 3.0
+name: print-api
 -- For the purpose of release and pre-release versioning, we use the following scheme:
 -- EPOCH.MAJOR.MINOR.PATCH
 -- with the MINOR member being even for releases and odd for pre-releases
-version:            0.1.1.0
-synopsis:           Print the API of a package.
-license:            BSD-3-Clause
-author:             Ben Gamari, Hécate Kleidukos
-maintainer:         hecate+github@glitchbra.in
-copyright:          © 2023 Ben Gamari, 2024 Hécate Kleidukos
+version: 0.1.1.0
+synopsis: Print the API of a package.
+license: BSD-3-Clause
+author: Ben Gamari, Hécate Kleidukos
+maintainer: hecate+github@glitchbra.in
+copyright: © 2023 Ben Gamari, 2024 Hécate Kleidukos
 extra-source-files:
-  compat/9.10.1/GHC/Compat.hs
+  compat/9.10.3/GHC/Compat.hs
   compat/9.12.2/GHC/Compat.hs
-  compat/9.6.6/GHC/Compat.hs
-  compat/9.8.4/GHC/Compat.hs
+  compat/9.14.1/GHC/Compat.hs
 
-tested-with:        GHC ==9.6.6 || ==9.8.4 || ==9.10.1 || ==9.12.2
+tested-with: ghc ==9.10.3 || ==9.12.2 || ==9.14.1
 
 common extensions
   default-extensions:
@@ -32,158 +30,152 @@ common extensions
     RecordWildCards
     StrictData
     TypeFamilies
+    ImportQualifiedPost
 
-  default-language:   GHC2021
+  default-language: GHC2021
 
 common ghc-options
   ghc-options:
-    -Wall -Wcompat -Widentities -Wincomplete-record-updates
-    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
-    -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
-    -Wno-unticked-promoted-constructors -finfo-table-map
+    -Wall
+    -Wcompat
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wpartial-fields
+    -Wredundant-constraints
+    -fhide-source-paths
+    -Wno-unused-do-bind
+    -fshow-hole-constraints
+    -Wno-unticked-promoted-constructors
+    -finfo-table-map
 
 common rts-options
-  ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
+  ghc-options:
+    -rtsopts
+    -threaded
+    "-with-rtsopts=-N -T"
 
 common print-api-common
-  import:           extensions
-  import:           ghc-options
-  import:           rts-options
-  hs-source-dirs:   app/print-api
-
+  import: extensions
+  import: ghc-options
+  import: rts-options
+  hs-source-dirs: app/print-api
   -- For some mysterious reason Cabal doesn't like it when there is no `main-is` in the executable section;
   -- Importing it doesn't work.
   -- main-is:          Main.hs
   build-depends:
-    , base
-    , bytestring
-    , extra
-    , ghc
-    , ghc-paths
-    , optparse-applicative
-    , print-api
+    base,
+    bytestring,
+    extra,
+    ghc,
+    ghc-paths,
+    optparse-applicative,
+    print-api,
 
   default-language: GHC2021
 
 library
-  import:          extensions
-  import:          ghc-options
-  hs-source-dirs:  src
+  import: extensions
+  import: ghc-options
+  hs-source-dirs: src
 
-  if impl(ghc ==9.6.6)
-    hs-source-dirs: compat/9.6.6
-
-  if impl(ghc ==9.8.4)
-    hs-source-dirs: compat/9.8.4
-
-  if impl(ghc ==9.10.1)
-    hs-source-dirs: compat/9.10.1
+  if impl(ghc ==9.10.3)
+    hs-source-dirs: compat/9.10.3
 
   if impl(ghc ==9.12.2)
     hs-source-dirs: compat/9.12.2
 
-  other-modules:   Paths_print_api
+  if impl(ghc ==9.14.1)
+    hs-source-dirs: compat/9.14.1
+  other-modules: Paths_print_api
   autogen-modules: Paths_print_api
-
-  -- cabal-fmt: expand src/
+  -- cabal-gild: discover src/
   exposed-modules:
-    GHC.Compat
     PrintApi.CLI.Cmd.Dump
     PrintApi.CLI.Types
     PrintApi.IgnoredDeclarations
     PrintApi.Utils
 
   build-depends:
-    , base
-    , bytestring
-    , containers
-    , extra
-    , filepath
-    , ghc
-    , ghc-boot
-    , ghc-paths
-    , haddock-library
-    , optparse-applicative
-    , process
-    , text
-    , typed-process
+    base,
+    bytestring,
+    containers,
+    extra,
+    filepath,
+    ghc,
+    ghc-boot,
+    ghc-paths,
+    haddock-library,
+    optparse-applicative,
+    process,
+    text,
+    typed-process,
 
 executable print-api
-  import:           extensions
-  import:           ghc-options
-  import:           rts-options
-  hs-source-dirs:   app/print-api-wrapper
-  main-is:          Main.hs
+  import: extensions
+  import: ghc-options
+  import: rts-options
+  hs-source-dirs: app/print-api-wrapper
+  main-is: Main.hs
   build-depends:
-    , base
-    , bytestring
-    , optparse-applicative
-    , print-api
+    base,
+    bytestring,
+    optparse-applicative,
+    print-api,
 
   default-language: GHC2021
 
-executable print-api-9.6.6
-  import:  print-api-common
+executable print-api-9.10.3
+  import: print-api-common
   main-is: Main.hs
 
-  if impl(ghc ==9.6.6)
+  if impl(ghc ==9.10.3)
     buildable: True
-
-  else
-    buildable: False
-
-executable print-api-9.8.4
-  import:  print-api-common
-  main-is: Main.hs
-
-  if impl(ghc ==9.8.4)
-    buildable: True
-
-  else
-    buildable: False
-
-executable print-api-9.10.1
-  import:  print-api-common
-  main-is: Main.hs
-
-  if impl(ghc ==9.10.1)
-    buildable: True
-
   else
     buildable: False
 
 executable print-api-9.12.2
-  import:  print-api-common
+  import: print-api-common
   main-is: Main.hs
 
   if impl(ghc ==9.12.2)
     buildable: True
+  else
+    buildable: False
 
+executable print-api-9.14.1
+  import: print-api-common
+  main-is: Main.hs
+
+  if impl(ghc ==9.14.1)
+    buildable: True
   else
     buildable: False
 
 test-suite print-api-test
-  import:         extensions
-  import:         ghc-options
-  import:         rts-options
-  type:           exitcode-stdio-1.0
+  import: extensions
+  import: ghc-options
+  import: rts-options
+  type: exitcode-stdio-1.0
   hs-source-dirs: test
-  main-is:        Main.hs
+  main-is: Main.hs
+  -- cabal-gild: discover test --exclude "test/Main.hs"
   other-modules:
+    DuplicateExports
     IgnoreList
     Utils
 
   build-depends:
-    , base
-    , bytestring
-    , directory
-    , extra
-    , filepath
-    , ghc
-    , print-api
-    , tasty
-    , tasty-coverage
-    , tasty-golden
-    , tasty-hunit
-    , tasty-test-reporter
-    , typed-process
+    base,
+    bytestring,
+    directory,
+    extra,
+    filepath,
+    ghc,
+    print-api,
+    tasty,
+    tasty-coverage,
+    tasty-golden,
+    tasty-hunit,
+    tasty-test-reporter,
+    typed-process,

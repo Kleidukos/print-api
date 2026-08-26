@@ -1,9 +1,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 module IgnoreList where
 
-import Control.Monad.IO.Class
 import Data.ByteString.Lazy (LazyByteString)
-import Data.ByteString.Lazy.Char8 qualified as C8
 import Data.List.Extra qualified as List
 import Language.Haskell.Syntax.Module.Name (mkModuleName)
 import System.Process.Typed qualified as Process
@@ -17,6 +15,7 @@ import qualified System.Directory as Directory
 import qualified System.Directory.OsPath as OsPath
 import qualified System.IO as System
 import qualified System.OsPath as OsPath
+import Control.Exception (finally)
 import Control.Monad.Extra (whenM)
 
 import qualified PrintApi.CLI.Cmd.Dump as Dump
@@ -33,22 +32,23 @@ spec = testGroup "Ignore list"
         generateVectorAPIWithIgnoreList
   ]
 
-generateVectorAPIWithIgnoreList :: (MonadIO m) => m LazyByteString
+generateVectorAPIWithIgnoreList :: IO LazyByteString
 generateVectorAPIWithIgnoreList = do
-  let vectorPath = "../vector-0.13.1.0"
-  liftIO $ whenM (Directory.doesDirectoryExist vectorPath) $ 
-    Directory.removeDirectoryRecursive vectorPath
-  (exitCode, stdOut, _stdErr) <- Process.readProcess $ Process.shell "cabal exec -v0 -- ghc --print-libdir"
-  assertExitSuccess "`cabal exec -v0 -- ghc --print-libdir`" exitCode
-  assertExitSuccess "Fetch the archive of vector" =<< Process.runProcess (Process.shell "cabal get vector-0.13.1.0 --destdir=../")
-  liftIO $ Directory.setCurrentDirectory vectorPath
-  let buildVector = Process.shell "cabal build -j --write-ghc-environment-files=always"
-  assertExitSuccess "Build vector" =<< Process.runProcess buildVector
-  ignoreListPath <- liftIO $ OsPath.makeAbsolute [osp|../print-api/test/golden/vector-ignore-list.txt|]
-  ignoreListFilePath <- liftIO $ OsPath.decodeUtf ignoreListPath
-  modules <- lines <$> liftIO (System.readFile ignoreListFilePath)
-  let ignoredModules = List.map mkModuleName modules
-  actualAPI <- liftIO $ Dump.computePackageAPI False (List.trimEnd $ C8.unpack stdOut) ignoredModules "vector"
-  actualApiPath <- liftIO $ Directory.makeAbsolute "../print-api/test/golden/vector-actual-api.txt"
-  liftIO $ System.writeFile actualApiPath actualAPI
-  liftIO $ ByteString.readFile actualApiPath
+  originalDir <- Directory.getCurrentDirectory
+  flip finally (Directory.setCurrentDirectory originalDir) $ do
+    let vectorPath = "../vector-0.13.1.0"
+    whenM (Directory.doesDirectoryExist vectorPath) $
+      Directory.removeDirectoryRecursive vectorPath
+    libdir <- getLibdir
+    assertExitSuccess "Fetch the archive of vector" =<< Process.runProcess (Process.shell "cabal get vector-0.13.1.0 --destdir=../")
+    Directory.setCurrentDirectory vectorPath
+    let buildVector = Process.shell "cabal build -j --write-ghc-environment-files=always --ghc-options=-haddock"
+    assertExitSuccess "Build vector" =<< Process.runProcess buildVector
+    ignoreListPath <- OsPath.makeAbsolute [osp|../print-api/test/golden/vector-ignore-list.txt|]
+    ignoreListFilePath <- OsPath.decodeUtf ignoreListPath
+    modules <- lines <$> System.readFile ignoreListFilePath
+    let ignoredModules = List.map mkModuleName modules
+    actualAPI <- Dump.computePackageAPI False libdir ignoredModules "vector"
+    actualApiPath <- Directory.makeAbsolute "../print-api/test/golden/vector-actual-api.txt"
+    System.writeFile actualApiPath actualAPI
+    ByteString.readFile actualApiPath
