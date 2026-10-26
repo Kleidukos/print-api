@@ -1,0 +1,4 @@
+packages: .
+
+package patsyn-dup
+  ghc-options: -haddock

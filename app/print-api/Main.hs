@@ -5,11 +5,11 @@ module Main where
 import Data.ByteString.Lazy.Char8 qualified as ByteString
 import Data.List.Extra qualified as List
 import Options.Applicative
-import PrintApi.Utils
 import System.IO
 
 import PrintApi.CLI.Cmd.Dump (run)
 import PrintApi.CLI.Types
+import PrintApi.Utils
 
 main :: IO ()
 main = do

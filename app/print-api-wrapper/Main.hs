@@ -3,10 +3,11 @@ module Main (main) where
 import Data.ByteString.Lazy.Char8 qualified as ByteString
 import Data.Char (isSpace)
 import Options.Applicative
-import PrintApi.CLI.Types
-import PrintApi.Utils (readCabalizedProcess, runCabalizedProcess)
 import System.Environment (getArgs)
 import System.IO (hPutStrLn, stderr)
+
+import PrintApi.CLI.Types
+import PrintApi.Utils (readCabalizedProcess, runCabalizedProcess)
 
 main :: IO ()
 main = do

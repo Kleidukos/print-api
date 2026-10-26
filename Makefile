@@ -17,8 +17,8 @@ lint: ## Run the code linter (HLint)
 	@find app src compat -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
 style: ## Run the code styler (fourmolu and cabal-fmt)
-	@cabal-fmt -i *.cabal
-	@fourmolu -q --mode inplace src app compat
+	@cabal-gild --io=print-api.cabal
+	@fourmolu -o -XImportQualifiedPost -q --mode inplace src app compat
 
 tags: ## Generate ctags for the project with `ghc-tags`
 	@ghc-tags -c
